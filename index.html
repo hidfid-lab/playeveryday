@@ -406,6 +406,19 @@
                     </button>
                 </form>
 
+                <!-- 整頁改版與還原 -->
+                <div class="mt-4 pt-4 border-t border-slate-100 space-y-2">
+                    <button type="button" onclick="generateAndApplyTrip(event)" class="w-full py-3 bg-gradient-to-r from-pink-500 to-rose-400 hover:from-pink-600 hover:to-rose-500 text-white font-bold rounded-xl shadow-md transition cursor-pointer flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>✨ 生成新行程並套用整頁（需 API Key）</span>
+                    </button>
+                    <p class="text-[11px] text-slate-400 text-center">會依表單內容生成全新行程，並重建地圖、行程卡與標題（精簡為 2 天精華站點）</p>
+                    <button type="button" onclick="resetItinerary()" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span>還原預設台東行程</span>
+                    </button>
+                </div>
+
                 <!-- AI 生成結果區 -->
                 <div id="ai-result-box" class="hidden mt-5 pt-5 border-t border-slate-100">
                     <div class="flex items-center justify-between mb-2">
@@ -718,6 +731,12 @@
             { id: 6, day: 'day2', badge: 'D2-2', name: '池上伯朗大道', lat: 23.0975, lng: 121.2155, stay: '11:40 午餐與單車', drive: '距離鹿野 40 分鐘', desc: '無邊際稻浪與金城武樹，縱谷最經典的單車道。', img: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/4/41/2023-09-13_Mr._Brown_Avenue.jpg/960px-2023-09-13_Mr._Brown_Avenue.jpg', navUrl: 'https://www.google.com/maps/search/?api=1&query=池上伯朗大道', hours: '全天開放', bestTime: '稻浪季 6–8 月，日出與夕陽最佳', food: '池上便當、米國學校周邊小吃', parking: '大道入口停車場', tips: '單車道全長約 7.5km，建議租單車慢慢騎；金城武樹位於大道中段，可順路打卡。' }
         ];
 
+        // 預設行程快照（AI 生成後可還原）
+        const DEFAULT_ITINERARY = itineraryStations.map(s => ({ ...s }));
+        const DEFAULT_TITLE = document.querySelector('h1') ? document.querySelector('h1').textContent : '';
+        const DEFAULT_SUBTITLE = document.querySelector('header p') ? document.querySelector('header p').textContent : '';
+        const DEFAULT_DOC_TITLE = document.title;
+
         let aiResultText = '';
 
         const TAB_BUTTON_IDS = { all: 'tab-all', map: 'tab-map', day1: 'tab-day1', day2: 'tab-day2', stay: 'tab-stay', prep: 'tab-prep' };
@@ -811,6 +830,233 @@
             return out;
         }
 
+        // ===== Gemini API 呼叫（含模型降級）=====
+        const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+
+        async function callGeminiAPI(prompt, apiKey, jsonMode) {
+            let lastErr = null;
+            for (const model of GEMINI_MODELS) {
+                try {
+                    const generationConfig = { temperature: 0.7, maxOutputTokens: jsonMode ? 8192 : 4096 };
+                    if (jsonMode) generationConfig.responseMimeType = 'application/json';
+                    const res = await fetch(
+                        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
+                        {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig })
+                        }
+                    );
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        lastErr = new Error(err?.error?.message || `API 回應錯誤 (${res.status})`);
+                        continue;
+                    }
+                    const data = await res.json();
+                    let text = (data.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('').trim();
+                    if (data.candidates?.[0]?.finishReason === 'MAX_TOKENS') {
+                        text += '\n\n（內容因長度上限被截斷）';
+                    }
+                    if (text) return text;
+                    lastErr = new Error('AI 未回傳內容');
+                } catch (e) {
+                    lastErr = e;
+                }
+            }
+            throw lastErr || new Error('所有模型皆無法使用');
+        }
+
+        function parseAiJson(raw) {
+            let s = (raw || '').replace(/```json|```/g, '').trim();
+            const start = s.indexOf('{');
+            const end = s.lastIndexOf('}');
+            if (start === -1 || end === -1) throw new Error('AI 回傳格式不是 JSON');
+            return JSON.parse(s.slice(start, end + 1));
+        }
+
+        // ===== AI 生成並套用整頁行程 =====
+        function collectTripForm() {
+            return {
+                origin: document.getElementById('form-origin').value.trim(),
+                destination: document.getElementById('form-destination').value.trim(),
+                days: document.getElementById('form-days').value,
+                budget: document.getElementById('form-budget').value,
+                mustVisit: document.getElementById('form-mustvisit').value.trim()
+            };
+        }
+
+        function startLoadingUI() {
+            const loading = document.getElementById('ai-loading-box');
+            const btn = document.getElementById('ai-submit-btn');
+            const resultBox = document.getElementById('ai-result-box');
+            loading.classList.remove('hidden');
+            btn.disabled = true;
+            btn.classList.add('opacity-60', 'cursor-not-allowed');
+            resultBox.classList.add('hidden');
+            document.getElementById('ai-loading-bar').style.width = '5%';
+            document.getElementById('ai-loading-meta').textContent = '已等待 0 秒';
+            const loadStart = Date.now();
+            const loadTimer = setInterval(() => {
+                const sec = Math.floor((Date.now() - loadStart) / 1000);
+                const meta = document.getElementById('ai-loading-meta');
+                const bar = document.getElementById('ai-loading-bar');
+                const txt = document.getElementById('ai-loading-text');
+                if (meta) meta.textContent = `已等待 ${sec} 秒${sec > 20 ? '，行程內容較長請稍候...' : ''}`;
+                if (bar) bar.style.width = Math.min(92, 5 + sec * 3) + '%';
+                if (txt) {
+                    if (sec > 25) txt.textContent = '行程內容較長，正在最後整理...';
+                    else if (sec > 10) txt.textContent = '正在撰寫每日景點與美食建議...';
+                    else if (sec > 3) txt.textContent = '正在規劃車程路線與時間表...';
+                }
+            }, 500);
+            return () => {
+                clearInterval(loadTimer);
+                loading.classList.add('hidden');
+                btn.disabled = false;
+                btn.classList.remove('opacity-60', 'cursor-not-allowed');
+            };
+        }
+
+        async function generateAndApplyTrip(event) {
+            event.preventDefault();
+            const resultBox = document.getElementById('ai-result-box');
+            const resultEl = document.getElementById('ai-result-text');
+            const apiKey = (document.getElementById('api-key-input').value || '').trim()
+                || (localStorage.getItem('gemini_custom_api_key') || '').trim();
+            const f = collectTripForm();
+            const stopLoading = startLoadingUI();
+
+            const prompt = `請只輸出 JSON，不要 markdown、不要解釋文字。JSON 格式如下：
+{"title":"行程標題","subtitle":"副標語","days":[{"theme":"Day 1 主題","stations":[{"name":"景點名稱","lat":23.0,"lng":121.0,"time":"09:00","stay":"預計停留時間","drive":"距上一站車程","desc":"一句介紹","bestTime":"最佳時段","food":"美食推薦","parking":"停車資訊","tips":"小撇步"}]}]}
+規則：
+1. days 固定 2 天；第一天第一站為出發地（name 填出發地名稱，lat/lng 填出發地座標），其餘站 point 為景點。
+2. 每天 3-4 個站點，總共不超過 8 個。
+3. lat/lng 必須是數字（十進位），請盡量準確，這是地圖定位用。
+4. 必訪需求：${f.mustVisit || '無特別指定'}。
+行程需求：從${f.origin}前往${f.destination}，${f.days}，預算風格：${f.budget}。`;
+
+            try {
+                if (!apiKey) throw new Error('此功能需要 Gemini API Key（請先在上方設定）');
+                const raw = await callGeminiAPI(prompt, apiKey, true);
+                const json = parseAiJson(raw);
+                await applyAiItinerary(json);
+                aiResultText = `已將「${json.title || 'AI 行程'}」套用至整頁！\n\n` + JSON.stringify(json, null, 2).slice(0, 3000);
+                resultEl.textContent = aiResultText;
+                resultBox.classList.remove('hidden');
+                saveGeneratedTrip(`${f.origin} → ${f.destination}｜${f.days}（整頁）`, aiResultText);
+                renderSavedTrips();
+                showToast('AI 行程已生成並套用至整頁！');
+            } catch (err) {
+                resultEl.textContent = `生成失敗：${err.message}`;
+                resultBox.classList.remove('hidden');
+                showToast('AI 生成失敗');
+            } finally {
+                stopLoading();
+            }
+        }
+
+        // ===== Wikimedia Commons 圖片搜尋 =====
+        const IMAGE_PLACEHOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#e2e8f0"/><text x="50%" y="56%" font-size="72" text-anchor="middle">🏔️</text></svg>'
+        );
+        const commonsCache = {};
+
+        async function fetchCommonsImage(name) {
+            if (commonsCache[name] !== undefined) return commonsCache[name];
+            let result = null;
+            try {
+                const url = 'https://commons.wikimedia.org/w/api.php?' + new URLSearchParams({
+                    action: 'query', generator: 'search', gsrsearch: name,
+                    gsrnamespace: 6, gsrlimit: 6, prop: 'imageinfo',
+                    iiprop: 'url|mime', iiurlwidth: 800, format: 'json', origin: '*'
+                });
+                const res = await fetch(url);
+                const data = await res.json();
+                const pages = data?.query?.pages || {};
+                const sorted = Object.values(pages).sort((a, b) => (a.index || 0) - (b.index || 0));
+                for (const p of sorted) {
+                    const ii = p.imageinfo?.[0];
+                    const mime = ii?.mime || '';
+                    // 只接受一般圖片，排除 PDF/文件/SVG 繪圖
+                    if ((mime === 'image/jpeg' || mime === 'image/png') && ii.thumburl) {
+                        result = ii.thumburl.split('?')[0];
+                        break;
+                    }
+                }
+            } catch (e) { /* 網路或 CORS 失敗時回傳 null */ }
+            commonsCache[name] = result;
+            return result;
+        }
+
+        async function applyAiItinerary(json) {
+            const stations = [];
+            let fallbackLat = 22.85, fallbackLng = 120.85;
+            (json.days || []).slice(0, 2).forEach((day, di) => {
+                (day.stations || []).forEach((st, si) => {
+                    const isFirst = di === 0 && si === 0;
+                    const lat = parseFloat(st.lat), lng = parseFloat(st.lng);
+                    if (isFinite(lat)) fallbackLat = lat;
+                    if (isFinite(lng)) fallbackLng = lng;
+                    stations.push({
+                        id: stations.length + 1,
+                        day: isFirst ? 'start' : (di === 0 ? 'day1' : 'day2'),
+                        badge: isFirst ? '起點' : `D${di + 1}-${si + 1}`,
+                        name: st.name || `景點 ${stations.length + 1}`,
+                        lat: isFinite(lat) ? lat : fallbackLat,
+                        lng: isFinite(lng) ? lng : fallbackLng,
+                        stay: st.stay || st.time || '',
+                        drive: st.drive || '',
+                        desc: st.desc || '',
+                        img: '',
+                        navUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(st.name || '')}`,
+                        hours: st.hours || '', bestTime: st.bestTime || '', food: st.food || '', parking: st.parking || '', tips: st.tips || ''
+                    });
+                });
+            });
+            if (!stations.length) throw new Error('AI 回傳的行程沒有站點資料');
+
+            // 逐站搜尋 Wikimedia Commons 實景圖，抓不到用灰色佔位圖
+            await Promise.all(stations.map(async st => {
+                const url = await fetchCommonsImage(st.name);
+                st.img = url || IMAGE_PLACEHOLDER;
+            }));
+
+            itineraryStations.length = 0;
+            stations.forEach(s => itineraryStations.push(s));
+
+            const h1 = document.querySelector('header h1');
+            const sub = document.querySelector('header p');
+            if (h1 && json.title) h1.textContent = `❤️ ${json.title} ❤️`;
+            if (sub && json.subtitle) sub.textContent = json.subtitle;
+            if (json.title) document.title = `${json.title} | 專屬行程手冊`;
+
+            renderItineraryLists();
+            renderMapStationCards();
+            if (mapInstance) {
+                refreshMapLayers();
+                setActiveRouteButton('all');
+                filterMapRoute('all');
+            }
+        }
+
+        function resetItinerary() {
+            itineraryStations.length = 0;
+            DEFAULT_ITINERARY.forEach(s => itineraryStations.push({ ...s }));
+            const h1 = document.querySelector('header h1');
+            const sub = document.querySelector('header p');
+            if (h1) h1.textContent = DEFAULT_TITLE;
+            if (sub) sub.textContent = DEFAULT_SUBTITLE;
+            document.title = DEFAULT_DOC_TITLE;
+            renderItineraryLists();
+            renderMapStationCards();
+            if (mapInstance) {
+                refreshMapLayers();
+                setActiveRouteButton('all');
+                filterMapRoute('all');
+            }
+            showToast('已還原預設台東行程！');
+        }
+
         async function generateNewTripWithAI(event) {
             event.preventDefault();
             const loading = document.getElementById('ai-loading-box');
@@ -849,42 +1095,10 @@
 
             const prompt = `請以繁體中文規劃一份詳細的${days}旅遊行程：從${origin}前往${destination}。預算風格：${budget}。一定要去的景點或需求：${mustVisit || '無特別指定'}。請輸出純文字行程表，包含每日時間安排、景點介紹、交通方式與美食建議，語氣親切自然。`;
 
-            const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
-            let lastErr = null;
-            for (const model of (apiKey ? GEMINI_MODELS : [])) {
-                try {
-                    const res = await fetch(
-                        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
-                        {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                contents: [{ parts: [{ text: prompt }] }],
-                                generationConfig: { temperature: 0.7, maxOutputTokens: 4096 }
-                            })
-                        }
-                    );
-                    if (!res.ok) {
-                        const err = await res.json().catch(() => ({}));
-                        lastErr = new Error(err?.error?.message || `API 回應錯誤 (${res.status})`);
-                        continue;
-                    }
-                    const data = await res.json();
-                    aiResultText = (data.candidates?.[0]?.content?.parts || [])
-                        .map(p => p.text || '').join('').trim();
-                    if (data.candidates?.[0]?.finishReason === 'MAX_TOKENS') {
-                        aiResultText += '\n\n（內容因長度上限被截斷，建議縮短天數或必訪景點後重試）';
-                    }
-                    if (aiResultText) break;
-                    lastErr = new Error('AI 未回傳內容');
-                } catch (e) {
-                    lastErr = e;
-                }
-            }
-
             try {
                 if (apiKey) {
-                    if (!aiResultText) throw lastErr || new Error('所有模型皆無法使用');
+                    aiResultText = await callGeminiAPI(prompt, apiKey, false);
+                    if (!aiResultText) throw new Error('AI 未回傳內容，請重試');
                 } else {
                     aiResultText = buildLocalItinerary(origin, destination, days, budget, mustVisit);
                 }
@@ -1004,17 +1218,35 @@ ${routeText}
                 attribution: 'Tiles &copy; Esri &copy; OpenStreetMap contributors'
             }).addTo(mapInstance);
 
-            const day1Coords = [[22.8825, 120.3268], [22.485, 120.545], [22.5071, 120.9614], [22.6468, 121.0315], [22.7524, 121.1462]];
-            const day2Coords = [[22.7524, 121.1462], [22.9126, 121.1213], [23.0975, 121.2155], [22.8825, 120.3268]];
-
-            day1Polyline = L.polyline(day1Coords, { color: '#0f766e', weight: 5, opacity: 0.88 }).addTo(mapInstance);
-            day2Polyline = L.polyline(day2Coords, { color: '#d97706', weight: 5, opacity: 0.9, dashArray: '10, 8' }).addTo(mapInstance);
-
             mapInstance.on('click', () => {
                 if (Date.now() - lastMarkerClickAt < 400) return;
                 closeStationCard();
             });
             mapInstance.on('dragstart', closeStationCard);
+
+            refreshMapLayers();
+        }
+
+        // 依目前 itineraryStations 重建路線與標記（AI 生成新行程後呼叫）
+        function refreshMapLayers() {
+            mapMarkers.forEach(m => { if (mapInstance.hasLayer(m.marker)) m.marker.remove(); });
+            mapMarkers = [];
+            if (day1Polyline) { mapInstance.removeLayer(day1Polyline); day1Polyline = null; }
+            if (day2Polyline) { mapInstance.removeLayer(day2Polyline); day2Polyline = null; }
+
+            const d1 = itineraryStations.filter(s => s.day === 'start' || s.day === 'day1');
+            const d2 = itineraryStations.filter(s => s.day === 'day2');
+            const startSt = itineraryStations.find(s => s.day === 'start');
+            const day1Coords = d1.map(s => [s.lat, s.lng]);
+            const day2Coords = d2.map(s => [s.lat, s.lng]);
+            if (startSt) day2Coords.push([startSt.lat, startSt.lng]);
+
+            if (day1Coords.length > 1) {
+                day1Polyline = L.polyline(day1Coords, { color: '#0f766e', weight: 5, opacity: 0.88 }).addTo(mapInstance);
+            }
+            if (day2Coords.length > 1) {
+                day2Polyline = L.polyline(day2Coords, { color: '#d97706', weight: 5, opacity: 0.9, dashArray: '10, 8' }).addTo(mapInstance);
+            }
 
             itineraryStations.forEach(station => {
                 const badgeBg = station.day === 'start' ? 'bg-slate-800' : (station.day === 'day1' ? 'bg-teal-700' : 'bg-amber-600');
@@ -1035,7 +1267,9 @@ ${routeText}
 
             renderMapStationCards();
             const group = L.featureGroup(mapMarkers.map(m => m.marker));
-            mapInstance.fitBounds(group.getBounds().pad(0.15));
+            if (group.getLayers().length) {
+                mapInstance.fitBounds(group.getBounds().pad(0.15));
+            }
         }
 
         function renderItineraryLists() {
