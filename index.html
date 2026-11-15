@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0f766e">
+    <title>高雄阿蓮出發：台東二天一夜山海慢活之旅 | 專屬行程手冊</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 FontAwesome 圖示庫 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 引入 Leaflet.js 互動地圖樣式與腳本 -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="" defer></script>
+    <!-- 引入 Google Fonts 思源黑體 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            teal: '#0f766e',
+                            tealLight: '#f0fdfa',
+                            gold: '#d97706',
+                            goldLight: '#fffbeb',
+                            sand: '#fafaf9',
+                            dark: '#1e293b'
+                        }
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%, 100%': { boxShadow: '0 0 15px rgba(217, 119, 6, 0.6), 0 0 30px rgba(245, 158, 11, 0.4)', transform: 'scale(1)' },
+                            '50%': { boxShadow: '0 0 25px rgba(217, 119, 6, 0.9), 0 0 50px rgba(245, 158, 11, 0.7)', transform: 'scale(1.03)' },
+                        }
+                    },
+                    animation: {
+                        'pulse-glow': 'pulseGlow 2s infinite ease-in-out',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* 平滑捲動（列印時關閉，避免切斷頁面） */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* 觸控裝置：去除點擊延遲與高亮殘影 */
+        body {
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: contain;
+        }
+        button, a, [onclick] {
+            touch-action: manipulation;
+        }
+
+        /* modal 開啟時鎖定背景捲動 */
+        body.modal-open {
+            overflow: hidden;
+        }
+
+        /* Leaflet 自訂標記與手機優化彈窗樣式 */
+        .custom-div-icon {
+            background: transparent;
+            border: none;
+        }
+        .leaflet-popup-content-wrapper {
+            border-radius: 1rem !important;
+            padding: 0 !important;
+            overflow: hidden;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2) !important;
+            max-width: 280px !important;
+        }
+        .leaflet-popup-content {
+            margin: 0 !important;
+            width: 100% !important;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        /* 手機底部安全區（iPhone 全面螢幕） */
+        .safe-bottom {
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        /* 列印樣式：隱藏互動元素、展開全部內容 */
+        @media print {
+            html {
+                scroll-behavior: auto;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .hidden.print-expand {
+                display: block !important;
+            }
+            section.hidden.print-expand {
+                display: block !important;
+            }
+            #section-map {
+                display: none !important;
+            }
+            body {
+                background: #fff !important;
+            }
+            .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl {
+                box-shadow: none !important;
+            }
+            main {
+                padding-bottom: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-brand-sand text-brand-dark font-sans antialiased selection:bg-brand-teal selection:text-white">
+
+    <!-- 頂部品牌橫幅 Hero Section -->
+    <header class="relative bg-gradient-to-br from-teal-900 via-brand-teal to-teal-700 text-white overflow-hidden rounded-b-3xl shadow-lg">
+        <div class="absolute inset-0 opacity-15 pointer-events-none">
+            <svg class="w-full h-full" viewBox="0 0 800 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="700" cy="80" r="180" fill="#FBBF24"/>
+                <path d="M0 320 Q 200 220 400 300 T 800 260 L 800 400 L 0 400 Z" fill="#FFFFFF"/>
+            </svg>
+        </div>
+
+        <div class="relative max-w-4xl mx-auto px-5 py-10 sm:py-14">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-sm border border-white/25 text-amber-300 text-xs sm:text-sm font-medium mb-4">
+                <i class="fa-solid fa-compass"></i>
+                <span>專屬旅遊企劃書 · 精緻山海慢活路線</span>
+            </div>
+
+            <h1 class="text-2xl sm:text-4xl font-bold tracking-tight leading-snug mb-3">
+                ❤️ 高雄阿蓮出發：台東二天一夜山海慢活之旅 ❤️
+            </h1>
+            <p class="text-teal-100 text-sm sm:text-base max-w-2xl leading-relaxed mb-6">
+                從高雄阿蓮啟程，沿著國道3號銜接南迴改一路向東。看太平洋的湛藍海景、逛夜幕下的微醺鐵花市集，再走進花東縱谷的金色稻浪與高台草原，為你規劃最順暢不趕路的慢活假期。
+            </p>
+
+            <ul class="flex flex-wrap gap-2.5 text-xs sm:text-sm">
+                <li class="flex items-center gap-2 bg-teal-950/50 px-3.5 py-2 rounded-xl border border-teal-500/30">
+                    <i class="fa-solid fa-location-dot text-amber-400"></i>
+                    <span>出發地：高雄阿蓮</span>
+                </li>
+                <li class="flex items-center gap-2 bg-teal-950/50 px-3.5 py-2 rounded-xl border border-teal-500/30">
+                    <i class="fa-regular fa-calendar-check text-amber-400"></i>
+                    <span>天數：2 天 1 夜</span>
+                </li>
+                <li class="flex items-center gap-2 bg-teal-950/50 px-3.5 py-2 rounded-xl border border-teal-500/30">
+                    <i class="fa-solid fa-car-side text-amber-400"></i>
+                    <span>路線：南迴海線去 · 縱谷山線遊</span>
+                </li>
+            </ul>
+        </div>
+    </header>
+
+    <!-- 主要內容區 -->
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 -mt-5 relative z-10 pb-16">
+
+        <!-- 快捷操作工具列 -->
+        <section class="no-print bg-white rounded-2xl shadow-md p-4 mb-6 border border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-2 text-sm text-slate-600">
+                <i class="fa-solid fa-share-nodes text-brand-teal text-base"></i>
+                <span>分享給同行夥伴或保存手冊：</span>
+            </div>
+            <div class="flex flex-wrap items-center justify-center gap-2.5 w-full sm:w-auto">
+                <!-- 閃爍發光的 AI 規劃按鈕 -->
+                <button onclick="toggleAiGeneratorModal(true)" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 via-brand-gold to-orange-600 hover:from-amber-600 hover:to-orange-700 active:scale-95 text-white text-sm font-bold rounded-xl transition shadow-lg animate-pulse-glow cursor-pointer">
+                    <i class="fa-solid fa-wand-magic-sparkles text-amber-200"></i>
+                    <span>✨ AI 智慧行程規劃</span>
+                </button>
+                <button onclick="copyItineraryText()" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-teal hover:bg-teal-800 active:scale-95 text-white text-sm font-medium rounded-xl transition shadow-sm cursor-pointer">
+                    <i class="fa-regular fa-copy"></i>
+                    <span>一鍵複製純文字</span>
+                </button>
+                <button onclick="window.print()" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-goldLight hover:bg-amber-100 active:scale-95 text-brand-gold border border-amber-200 text-sm font-medium rounded-xl transition cursor-pointer">
+                    <i class="fa-solid fa-print"></i>
+                    <span>列印 / 存 PDF</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- AI 智慧行程規劃互動產生器 Modal -->
+        <div id="ai-generator-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))]" role="dialog" aria-modal="true" aria-labelledby="ai-modal-title">
+            <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-7 relative border border-slate-100 max-h-[90vh] overflow-y-auto">
+                <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-9 h-9 rounded-xl bg-brand-goldLight text-brand-gold flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        </span>
+                        <div>
+                            <h3 id="ai-modal-title" class="text-lg font-bold text-slate-800">AI 智慧旅遊行程規劃器</h3>
+                            <p class="text-xs text-slate-500">透過 Gemini API 隨時為你量身打造全新出遊企劃</p>
+                        </div>
+                    </div>
+                    <button onclick="toggleAiGeneratorModal(false)" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition cursor-pointer">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="mb-5 bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                            <i class="fa-solid fa-key text-brand-gold"></i>
+                            <span>Gemini API Key 設定</span>
+                        </label>
+                        <span class="text-[11px] text-amber-700">（免費額度即可輕鬆規劃）</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="password" id="api-key-input" placeholder="請輸入您的 Gemini API Key (選填)" 
+                               class="flex-1 px-3 py-2 text-base sm:text-xs rounded-xl border border-amber-300 bg-white focus:outline-none focus:ring-2 focus:ring-brand-gold">
+                        <button onclick="saveApiKey()" class="px-3.5 py-2 bg-brand-gold hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition cursor-pointer">
+                            儲存金鑰
+                        </button>
+                    </div>
+                </div>
+
+                <form id="ai-trip-form" onsubmit="generateNewTripWithAI(event)" class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">出發地</label>
+                            <input type="text" id="form-origin" value="高雄阿蓮" required
+                                   class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-teal">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">目的地</label>
+                            <input type="text" id="form-destination" value="台東" required
+                                   class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-teal">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">行程天數</label>
+                            <select id="form-days" class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-teal">
+                                <option value="2 天 1 夜" selected>2 天 1 夜</option>
+                                <option value="3 天 2 夜">3 天 2 夜</option>
+                                <option value="1 日遊">1 日遊</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">旅遊預算風格</label>
+                            <select id="form-budget" class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-teal">
+                                <option value="經濟實惠小資行" selected>經濟實惠小資行</option>
+                                <option value="舒適質感慢活遊">舒適質感慢活遊</option>
+                                <option value="頂級奢華度假風">頂級奢華度假風</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">一定要去的景點或特別需求</label>
+                        <input type="text" id="form-mustvisit" value="多良車站、鹿野高台、池上伯朗大道" 
+                               class="w-full px-3.5 py-2.5 text-base sm:text-sm rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-teal">
+                    </div>
+
+                    <div id="ai-loading-box" class="hidden py-4 text-center">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-brand-teal border-t-transparent mb-2"></div>
+                        <p class="text-xs font-bold text-brand-teal animate-pulse">Gemini AI 正在為您量身規劃順暢車程與在地美食...</p>
+                    </div>
+
+                    <button type="submit" id="ai-submit-btn" class="w-full py-3 bg-brand-teal hover:bg-teal-800 text-white font-bold rounded-xl shadow-md transition cursor-pointer flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-sparkles"></i>
+                        <span>開始生成專屬旅遊企劃</span>
+                    </button>
+                </form>
+
+                <!-- AI 生成結果區 -->
+                <div id="ai-result-box" class="hidden mt-5 pt-5 border-t border-slate-100">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                            <i class="fa-solid fa-clipboard-check text-brand-teal"></i>
+                            <span>生成結果</span>
+                        </h4>
+                        <button onclick="copyAiResult()" class="text-xs font-bold text-brand-teal hover:text-teal-700 flex items-center gap-1 cursor-pointer">
+                            <i class="fa-regular fa-copy"></i> 複製行程
+                        </button>
+                    </div>
+                    <div id="ai-result-text" class="text-xs sm:text-sm text-slate-700 leading-relaxed bg-slate-50 border border-slate-200 rounded-xl p-3.5 whitespace-pre-wrap max-h-56 overflow-y-auto"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 行程總覽與行前提醒區塊 -->
+        <section class="bg-white rounded-2xl shadow-sm p-5 sm:p-7 mb-6 border border-slate-100">
+            <div class="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-100">
+                <span class="w-8 h-8 rounded-lg bg-brand-goldLight text-brand-gold flex items-center justify-center">
+                    <i class="fa-solid fa-clipboard-list"></i>
+                </span>
+                <h2 class="text-lg sm:text-xl font-bold text-slate-800">行程總覽與行前貼心提醒</h2>
+            </div>
+
+            <ul class="space-y-3 text-sm sm:text-base text-slate-700 leading-relaxed">
+                <li class="flex items-start gap-3">
+                    <i class="fa-solid fa-route text-brand-teal mt-1 shrink-0"></i>
+                    <div><strong class="text-slate-900">交通動線規劃：</strong>從高雄阿蓮出發，經國道3號南下銜接台9線南迴公路直達台東。</div>
+                </li>
+                <li class="flex items-start gap-3">
+                    <i class="fa-solid fa-clock text-brand-teal mt-1 shrink-0"></i>
+                    <div><strong class="text-slate-900">行車節奏：</strong>單趟長途車程約 2.5 至 3.5 小時，途中可於屏東休息站稍作停留。</div>
+                </li>
+            </ul>
+        </section>
+
+        <!-- 分日頁籤切換控制器 -->
+        <nav class="no-print sticky top-2 z-20 bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-md border border-slate-200/80 mb-6">
+            <ul class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs sm:text-sm font-medium">
+                <li><button id="tab-all" onclick="switchDayTab('all')" class="w-full py-2.5 px-2 rounded-xl bg-brand-teal text-white shadow-sm transition cursor-pointer">全部展開</button></li>
+                <li><button id="tab-map" onclick="switchDayTab('map')" class="w-full py-2.5 px-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer flex items-center justify-center gap-1.5"><i class="fa-solid fa-map-location-dot text-brand-gold"></i><span>行程地圖</span></button></li>
+                <li><button id="tab-day1" onclick="switchDayTab('day1')" class="w-full py-2.5 px-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer">Day 1 行程</button></li>
+                <li><button id="tab-day2" onclick="switchDayTab('day2')" class="w-full py-2.5 px-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer">Day 2 行程</button></li>
+            </ul>
+        </nav>
+
+        <!-- 互動行程地圖分頁區塊 -->
+        <section id="section-map" class="hidden mb-10">
+            <div class="bg-white rounded-2xl shadow-sm p-4 sm:p-6 border border-slate-100">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
+                    <div>
+                        <span class="text-xs font-bold text-brand-teal uppercase tracking-wider block">INTERACTIVE ROUTE MAP</span>
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800">高雄阿蓮往返台東 · 全線互動地圖</h2>
+                    </div>
+                    <ul class="flex flex-wrap gap-2 text-xs font-medium">
+                        <li><button id="route-all" onclick="filterMapRoute('all')" class="px-3 py-2 rounded-xl bg-slate-800 text-white shadow-xs transition cursor-pointer whitespace-nowrap">全覽</button></li>
+                        <li><button id="route-day1" onclick="filterMapRoute('day1')" class="px-3 py-2 rounded-xl bg-teal-50 text-brand-teal border border-teal-200 transition cursor-pointer whitespace-nowrap">Day1 南迴</button></li>
+                        <li><button id="route-day2" onclick="filterMapRoute('day2')" class="px-3 py-2 rounded-xl bg-amber-50 text-brand-gold border border-amber-200 transition cursor-pointer whitespace-nowrap">Day2 縱谷</button></li>
+                    </ul>
+                </div>
+
+                <div class="w-full h-[55vh] min-h-[340px] sm:h-[480px] rounded-2xl overflow-hidden border border-slate-200 relative z-10 shadow-inner">
+                    <div id="taitung-map" class="w-full h-full"></div>
+                    <!-- 站點資訊卡（取代無法關閉的 Leaflet popup） -->
+                    <div id="station-detail-card" class="hidden absolute inset-x-3 bottom-3 z-[1200] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-[70%] flex flex-col">
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <h3 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-map-pin text-brand-teal"></i>
+                        <span>全線站點快速導航列表（點擊可定位至地圖）</span>
+                    </h3>
+                    <ul id="map-station-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- DAY 1 行程區塊 -->
+        <section id="section-day1" class="print-expand mb-10">
+            <div class="bg-gradient-to-r from-brand-teal to-teal-600 text-white rounded-2xl p-5 mb-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                    <span class="text-xs uppercase tracking-wider text-amber-300 font-bold block mb-1">DAY 01 · 啟程向東</span>
+                    <h2 class="text-xl sm:text-2xl font-bold">第一天：南迴海景與台東市區微醺夜</h2>
+                </div>
+            </div>
+            <ul id="day1-list" class="space-y-4"></ul>
+        </section>
+
+        <!-- DAY 2 行程區塊 -->
+        <section id="section-day2" class="print-expand">
+            <div class="bg-gradient-to-r from-amber-600 to-brand-gold text-white rounded-2xl p-5 mb-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                    <span class="text-xs uppercase tracking-wider text-teal-100 font-bold block mb-1">DAY 02 · 縱谷漫遊</span>
+                    <h2 class="text-xl sm:text-2xl font-bold">第二天：縱谷田園風光與熱氣球故鄉</h2>
+                </div>
+            </div>
+            <ul id="day2-list" class="space-y-4"></ul>
+        </section>
+    </main>
+
+    <footer class="safe-bottom bg-slate-900 text-slate-400 text-center py-8 px-4 text-xs sm:text-sm rounded-t-3xl">
+        <p>高雄阿蓮出發 · 台東二天一夜山海慢活之旅專屬手冊</p>
+    </footer>
+
+    <div id="toast-message" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 hidden items-center gap-2.5 bg-slate-900/95 text-white px-5 py-3 rounded-2xl shadow-xl border border-slate-700 text-sm font-medium mb-[env(safe-area-inset-bottom)]">
+        <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+        <span id="toast-text">提示訊息</span>
+    </div>
+
+    <script>
+        let mapInstance = null;
+        let mapMarkers = [];
+        let day1Polyline = null;
+        let day2Polyline = null;
+        let currentRouteFilter = 'all';
+
+        const itineraryStations = [
+            { id: 1, day: 'start', badge: '起點', name: '高雄阿蓮出發地', lat: 22.8825, lng: 120.3268, stay: '07:30 集合', drive: '前往多良約 2.5 小時', desc: '沿國道3號南下接南迴改。', img: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=500&q=80', navUrl: 'https://www.google.com/maps/search/?api=1&query=高雄市阿蓮區' },
+            { id: 2, day: 'day1', badge: 'D1-1', name: '多良觀光車站', lat: 22.5071, lng: 120.9614, stay: '預估停留 1.5 小時', drive: '距離上一站 2.5 小時', desc: '全台最美海景車站。', img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=500&q=80', navUrl: 'https://www.google.com/maps/search/?api=1&query=多良觀光車站' },
+            { id: 3, day: 'day1', badge: 'D1-2', name: '華源海灣', lat: 22.6468, lng: 121.0315, stay: '海景美拍順遊', drive: '距離多良 20 分鐘', desc: '椰林大道與湛藍海灣。', img: 'https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=500&q=80', navUrl: 'https://www.google.com/maps/search/?api=1&query=台東華源海灣' },
+            { id: 4, day: 'day1', badge: 'D1-3', name: '鐵花新聚落', lat: 22.7524, lng: 121.1462, stay: '17:30 晚間漫步', drive: '距離華源 30 分鐘', desc: '彩繪熱氣球燈海與市集。', img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=500&q=80', navUrl: 'https://www.google.com/maps/search/?api=1&query=鐵花新聚落' },
+            { id: 5, day: 'day2', badge: 'D2-1', name: '鹿野高台', lat: 22.9126, lng: 121.1213, stay: '09:15 停留 1.5 小時', drive: '距離市區 45 分鐘', desc: '熱氣球故鄉大草原。', img: 'https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?auto=format&fit=crop&w=500&q=80', navUrl: 'https://www.google.com/maps/search/?api=1&query=鹿野高台' },
+            { id: 6, day: 'day2', badge: 'D2-2', name: '池上伯朗大道', lat: 23.0975, lng: 121.2155, stay: '11:40 午餐與單車', drive: '距離鹿野 40 分鐘', desc: '無邊際稻浪與金城武樹。', img: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=500&q=80', navUrl: 'https://www.google.com/maps/search/?api=1&query=池上伯朗大道' }
+        ];
+
+        let aiResultText = '';
+
+        const TAB_BUTTON_IDS = { all: 'tab-all', map: 'tab-map', day1: 'tab-day1', day2: 'tab-day2' };
+
+        function setActiveTabButton(tab) {
+            Object.entries(TAB_BUTTON_IDS).forEach(([key, id]) => {
+                const btn = document.getElementById(id);
+                if (!btn) return;
+                const active = key === tab;
+                btn.className = 'w-full py-2.5 px-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ' +
+                    (active ? 'bg-brand-teal text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100');
+            });
+        }
+
+        function toggleAiGeneratorModal(show) {
+            const modal = document.getElementById('ai-generator-modal');
+            if (!modal) return;
+            if (show) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.body.classList.add('modal-open');
+                document.getElementById('api-key-input').value = localStorage.getItem('gemini_custom_api_key') || '';
+            } else {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.body.classList.remove('modal-open');
+            }
+        }
+
+        function saveApiKey() {
+            localStorage.setItem('gemini_custom_api_key', document.getElementById('api-key-input').value.trim());
+            showToast('API Key 已儲存至本機！');
+        }
+
+        async function copyTextToClipboard(text, successMsg) {
+            try {
+                await navigator.clipboard.writeText(text);
+            } catch (e) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+            }
+            showToast(successMsg);
+        }
+
+        function buildLocalItinerary(origin, destination, days, budget, mustVisit) {
+            const dayCount = days === '1 日遊' ? 1 : (days === '3 天 2 夜' ? 3 : 2);
+            const spots = mustVisit || '熱門景點';
+            let out = `【${origin} → ${destination}｜${days}｜${budget}】\n\n`;
+            for (let d = 1; d <= dayCount; d++) {
+                out += `■ 第 ${d} 天\n`;
+                out += `  08:30 出發，沿途享受沿海/山景風光。\n`;
+                out += `  12:00 午餐：品嚐當地特色美食。\n`;
+                out += `  14:00 必訪：${spots}\n`;
+                out += `  18:00 自由活動，體驗在地夜生活。\n\n`;
+            }
+            out += '※ 此為範本行程（未設定 Gemini API Key），可再調整細節。';
+            return out;
+        }
+
+        async function generateNewTripWithAI(event) {
+            event.preventDefault();
+            const loading = document.getElementById('ai-loading-box');
+            const resultBox = document.getElementById('ai-result-box');
+            const resultEl = document.getElementById('ai-result-text');
+            const btn = document.getElementById('ai-submit-btn');
+            const apiKey = (document.getElementById('api-key-input').value || '').trim()
+                || (localStorage.getItem('gemini_custom_api_key') || '').trim();
+
+            const origin = document.getElementById('form-origin').value.trim();
+            const destination = document.getElementById('form-destination').value.trim();
+            const days = document.getElementById('form-days').value;
+            const budget = document.getElementById('form-budget').value;
+            const mustVisit = document.getElementById('form-mustvisit').value.trim();
+
+            loading.classList.remove('hidden');
+            btn.disabled = true;
+            btn.classList.add('opacity-60', 'cursor-not-allowed');
+            resultBox.classList.add('hidden');
+
+            const prompt = `請以繁體中文規劃一份詳細的${days}旅遊行程：從${origin}前往${destination}。預算風格：${budget}。一定要去的景點或需求：${mustVisit || '無特別指定'}。請輸出純文字行程表，包含每日時間安排、景點介紹、交通方式與美食建議，語氣親切自然。`;
+
+            try {
+                if (apiKey) {
+                    const res = await fetch(
+                        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
+                        {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                contents: [{ parts: [{ text: prompt }] }],
+                                generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
+                            })
+                        }
+                    );
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        throw new Error(err?.error?.message || `API 回應錯誤 (${res.status})`);
+                    }
+                    const data = await res.json();
+                    aiResultText = (data.candidates?.[0]?.content?.parts || [])
+                        .map(p => p.text || '').join('').trim();
+                    if (!aiResultText) throw new Error('AI 未回傳內容，請重試');
+                } else {
+                    aiResultText = buildLocalItinerary(origin, destination, days, budget, mustVisit);
+                }
+                resultEl.textContent = aiResultText;
+                resultBox.classList.remove('hidden');
+                resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                showToast(apiKey ? 'AI 行程已生成！' : '已生成範本行程');
+            } catch (err) {
+                aiResultText = '';
+                resultEl.textContent = `生成失敗：${err.message}\n\n小提醒：API Key 可至 Google AI Studio 免費取得。若不想設定，可直接使用「一鍵複製純文字」分享現有行程。`;
+                resultBox.classList.remove('hidden');
+                showToast('AI 生成失敗');
+            } finally {
+                loading.classList.add('hidden');
+                btn.disabled = false;
+                btn.classList.remove('opacity-60', 'cursor-not-allowed');
+            }
+        }
+
+        function copyAiResult() {
+            if (aiResultText) {
+                copyTextToClipboard(aiResultText, 'AI 行程已複製！');
+            }
+        }
+
+        function initTaitungMap() {
+            if (typeof L === 'undefined') {
+                setTimeout(initTaitungMap, 300);
+                return;
+            }
+            if (mapInstance) {
+                setTimeout(() => mapInstance.invalidateSize(), 150);
+                return;
+            }
+
+            mapInstance = L.map('taitung-map', { zoomControl: true, scrollWheelZoom: false }).setView([22.85, 120.85], 9);
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                maxZoom: 18,
+                subdomains: 'abcd',
+                attribution: '&copy; OpenStreetMap &copy; CARTO'
+            }).addTo(mapInstance);
+
+            const day1Coords = [[22.8825, 120.3268], [22.485, 120.545], [22.5071, 120.9614], [22.6468, 121.0315], [22.7524, 121.1462]];
+            const day2Coords = [[22.7524, 121.1462], [22.9126, 121.1213], [23.0975, 121.2155], [22.8825, 120.3268]];
+
+            day1Polyline = L.polyline(day1Coords, { color: '#0f766e', weight: 5, opacity: 0.88 }).addTo(mapInstance);
+            day2Polyline = L.polyline(day2Coords, { color: '#d97706', weight: 5, opacity: 0.9, dashArray: '10, 8' }).addTo(mapInstance);
+
+            itineraryStations.forEach(station => {
+                const badgeBg = station.day === 'start' ? 'bg-slate-800' : (station.day === 'day1' ? 'bg-teal-700' : 'bg-amber-600');
+                const customIcon = L.divIcon({
+                    className: 'custom-div-icon',
+                    html: `<div class="flex flex-col items-center -translate-x-1/2 -translate-y-full">
+                            <span class="${badgeBg} text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-md border border-white whitespace-nowrap">${station.badge} ${station.name}</span>
+                            <div class="w-2.5 h-2.5 ${badgeBg} rotate-45 -mt-1.5 border-r border-b border-white"></div>
+                           </div>`,
+                    iconSize: [200, 56], iconAnchor: [100, 56]
+                });
+
+                const marker = L.marker([station.lat, station.lng], { icon: customIcon })
+                    .on('click', () => showStationCard(station))
+                    .addTo(mapInstance);
+                mapMarkers.push({ station, marker });
+            });
+
+            renderMapStationCards();
+            const group = L.featureGroup(mapMarkers.map(m => m.marker));
+            mapInstance.fitBounds(group.getBounds().pad(0.15));
+        }
+
+        function renderItineraryLists() {
+            const render = (listId, days, badgeCls, badgeTextCls) => {
+                const list = document.getElementById(listId);
+                if (!list) return;
+                const items = itineraryStations.filter(s => days.includes(s.day));
+                list.innerHTML = items.map(st => `
+                    <li class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-lg ${badgeCls} ${badgeTextCls} font-bold text-sm">${st.stay}</span>
+                            <button onclick="focusStationOnMap(${st.id})" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition cursor-pointer">
+                                <i class="fa-solid fa-map-location-dot text-brand-teal"></i> 地圖定位
+                            </button>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-800 mb-1">${st.badge} ${st.name}</h3>
+                        <p class="text-sm text-slate-600 mb-1.5">${st.desc}</p>
+                        <p class="text-xs text-slate-400 flex items-center gap-1.5"><i class="fa-solid fa-car-side"></i>${st.drive}</p>
+                    </li>
+                `).join('');
+            };
+            render('day1-list', ['start', 'day1'], 'bg-brand-tealLight', 'text-brand-teal');
+            render('day2-list', ['day2'], 'bg-brand-goldLight', 'text-brand-gold');
+        }
+
+        function renderMapStationCards() {
+            const container = document.getElementById('map-station-list');
+            if (!container) return;
+            container.innerHTML = itineraryStations.map(st => `
+                <li onclick="focusStationOnMap(${st.id})" class="bg-slate-50 hover:bg-white rounded-xl p-2.5 border border-slate-200 cursor-pointer flex items-center gap-2.5">
+                    <img src="${st.img}" alt="${st.name}" referrerpolicy="no-referrer" loading="lazy" decoding="async" class="w-12 h-12 rounded-lg object-cover shrink-0 bg-slate-200" onerror="this.style.display='none'">
+                    <div class="min-w-0 flex-1">
+                        <h4 class="font-bold text-xs text-slate-800 truncate">${st.badge} ${st.name}</h4>
+                        <p class="text-[11px] text-slate-500 truncate">${st.stay}</p>
+                    </div>
+                </li>
+            `).join('');
+        }
+
+        function showStationCard(station) {
+            const card = document.getElementById('station-detail-card');
+            if (!card) return;
+            card.innerHTML = `
+                <div class="h-32 w-full bg-slate-200 relative overflow-hidden shrink-0">
+                    <img src="${station.img}" alt="${station.name}" referrerpolicy="no-referrer" loading="lazy" decoding="async" class="w-full h-full object-cover" onerror="this.style.display='none'">
+                    <button onclick="closeStationCard()" aria-label="關閉" class="absolute top-2 right-2 w-8 h-8 rounded-full bg-slate-900/60 hover:bg-slate-900/80 text-white flex items-center justify-center transition cursor-pointer">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="p-3.5 overflow-y-auto">
+                    <span class="inline-block px-2 py-0.5 rounded-md bg-brand-tealLight text-brand-teal text-[11px] font-bold mb-1.5">${station.badge}</span>
+                    <h4 class="font-bold text-sm text-slate-900 mb-1">${station.name}</h4>
+                    <p class="text-[11px] text-teal-700 font-medium mb-0.5"><i class="fa-regular fa-clock mr-1"></i>${station.stay}</p>
+                    <p class="text-[11px] text-amber-700 font-medium mb-1.5"><i class="fa-solid fa-car mr-1"></i>${station.drive}</p>
+                    <p class="text-xs text-slate-600 leading-relaxed mb-2.5">${station.desc}</p>
+                    <a href="${station.navUrl}" target="_blank" rel="noopener noreferrer" class="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-teal-700 active:bg-teal-800 text-white text-xs font-bold rounded-xl">開啟 Google 導航</a>
+                </div>
+            `;
+            card.classList.remove('hidden');
+        }
+
+        function closeStationCard() {
+            const card = document.getElementById('station-detail-card');
+            if (card) card.classList.add('hidden');
+        }
+
+        function focusStationOnMap(stationId) {
+            if (!mapInstance) return;
+            const target = mapMarkers.find(m => m.station.id === stationId);
+            if (target) {
+                if (document.getElementById('section-map').classList.contains('hidden')) {
+                    switchDayTab('map');
+                }
+                mapInstance.flyTo([target.station.lat, target.station.lng], 14, { duration: 0.8 });
+                setTimeout(() => showStationCard(target.station), 600);
+                document.getElementById('taitung-map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        const ROUTE_BUTTON_IDS = { all: 'route-all', day1: 'route-day1', day2: 'route-day2' };
+
+        function setActiveRouteButton(type) {
+            Object.entries(ROUTE_BUTTON_IDS).forEach(([key, id]) => {
+                const btn = document.getElementById(id);
+                if (!btn) return;
+                const active = key === type;
+                if (active) {
+                    btn.className = 'px-3 py-2 rounded-xl bg-slate-800 text-white shadow-xs transition cursor-pointer whitespace-nowrap';
+                } else if (key === 'day1') {
+                    btn.className = 'px-3 py-2 rounded-xl bg-teal-50 text-brand-teal border border-teal-200 transition cursor-pointer whitespace-nowrap';
+                } else if (key === 'day2') {
+                    btn.className = 'px-3 py-2 rounded-xl bg-amber-50 text-brand-gold border border-amber-200 transition cursor-pointer whitespace-nowrap';
+                } else {
+                    btn.className = 'px-3 py-2 rounded-xl bg-slate-100 text-slate-600 border border-slate-200 transition cursor-pointer whitespace-nowrap';
+                }
+            });
+        }
+
+        function filterMapRoute(type) {
+            if (!mapInstance) return;
+            currentRouteFilter = type;
+            setActiveRouteButton(type);
+
+            const matches = (station) => {
+                if (type === 'all') return true;
+                if (type === 'day1') return station.day === 'day1' || station.day === 'start';
+                return station.day === 'day2';
+            };
+
+            const visibleMarkers = [];
+            mapMarkers.forEach(m => {
+                if (matches(m.station)) {
+                    if (!mapInstance.hasLayer(m.marker)) m.marker.addTo(mapInstance);
+                    visibleMarkers.push(m.marker);
+                } else {
+                    if (mapInstance.hasLayer(m.marker)) m.marker.remove();
+                }
+            });
+
+            if (day1Polyline) {
+                if (type === 'day2') { if (mapInstance.hasLayer(day1Polyline)) day1Polyline.remove(); }
+                else if (!mapInstance.hasLayer(day1Polyline)) day1Polyline.addTo(mapInstance);
+            }
+            if (day2Polyline) {
+                if (type === 'day1') { if (mapInstance.hasLayer(day2Polyline)) day2Polyline.remove(); }
+                else if (!mapInstance.hasLayer(day2Polyline)) day2Polyline.addTo(mapInstance);
+            }
+
+            if (visibleMarkers.length) {
+                mapInstance.flyToBounds(L.featureGroup(visibleMarkers).getBounds().pad(0.2), { duration: 0.8 });
+            }
+        }
+
+        function switchDayTab(tab) {
+            const secMap = document.getElementById('section-map');
+            const secDay1 = document.getElementById('section-day1');
+            const secDay2 = document.getElementById('section-day2');
+
+            secMap.classList.toggle('hidden', tab !== 'map');
+            secDay1.classList.toggle('hidden', tab !== 'all' && tab !== 'day1');
+            secDay2.classList.toggle('hidden', tab !== 'all' && tab !== 'day2');
+
+            setActiveTabButton(tab);
+
+            if (tab === 'map') {
+                initTaitungMap();
+            }
+        }
+
+        function copyItineraryText() {
+            const lines = [
+                '【高雄阿蓮出發：台東二天一夜山海慢活之旅】',
+                ''
+            ];
+            itineraryStations.forEach(s => {
+                lines.push(`${s.badge} ${s.name}｜${s.stay}`);
+                lines.push(`  車程：${s.drive}`);
+                lines.push(`  介紹：${s.desc}`);
+                lines.push('');
+            });
+            copyTextToClipboard(lines.join('\n'), '已複製行程至剪貼簿！');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast-message');
+            document.getElementById('toast-text').textContent = message;
+            toast.classList.remove('hidden');
+            toast.classList.add('flex');
+            setTimeout(() => { toast.classList.add('hidden'); toast.classList.remove('flex'); }, 3000);
+        }
+
+        // Modal：點擊背景或按 ESC 關閉
+        document.getElementById('ai-generator-modal').addEventListener('click', function (e) {
+            if (e.target === this) toggleAiGeneratorModal(false);
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') toggleAiGeneratorModal(false);
+        });
+
+        // 初始化按鈕狀態與行程列表
+        setActiveTabButton('all');
+        setActiveRouteButton('all');
+        renderItineraryLists();
+    </script>
+</body>
+</html>
