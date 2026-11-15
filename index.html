@@ -185,6 +185,40 @@
             </div>
         </section>
 
+        <!-- 使用說明（可收合） -->
+        <details class="no-print bg-white rounded-2xl shadow-sm border border-slate-100 mb-6 group">
+            <summary class="flex items-center justify-between p-4 sm:p-5 cursor-pointer list-none select-none">
+                <span class="flex items-center gap-2.5 text-sm sm:text-base font-bold text-slate-800">
+                    <span class="w-8 h-8 rounded-lg bg-brand-tealLight text-brand-teal flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-circle-question"></i>
+                    </span>
+                    使用說明
+                </span>
+                <i class="fa-solid fa-chevron-down text-slate-400 transition-transform group-open:rotate-180"></i>
+            </summary>
+            <div class="px-4 sm:px-5 pb-5 pt-1 text-sm text-slate-600 leading-relaxed space-y-4 border-t border-slate-100">
+                <div>
+                    <h4 class="font-bold text-slate-800 mb-1.5 flex items-center gap-1.5"><i class="fa-solid fa-layer-group text-brand-teal"></i>頁面功能</h4>
+                    <ul class="space-y-1.5 text-[13px] sm:text-sm">
+                        <li class="flex gap-2"><i class="fa-solid fa-check text-brand-teal mt-1 shrink-0 text-xs"></i><span><strong>頁籤切換</strong>：可分別檢視「全部展開」、「互動地圖」、「Day 1」、「Day 2」內容。</span></li>
+                        <li class="flex gap-2"><i class="fa-solid fa-check text-brand-teal mt-1 shrink-0 text-xs"></i><span><strong>互動地圖</strong>：點擊地圖上的站名標記可查看景點詳情與導航連結；上方按鈕可篩選 Day1 / Day2 路線；下方列表點擊可自動定位。</span></li>
+                        <li class="flex gap-2"><i class="fa-solid fa-check text-brand-teal mt-1 shrink-0 text-xs"></i><span><strong>一鍵複製純文字</strong>：將整份行程站點摘要複製到剪貼簿，方便貼到 LINE 或備忘錄。</span></li>
+                        <li class="flex gap-2"><i class="fa-solid fa-check text-brand-teal mt-1 shrink-0 text-xs"></i><span><strong>列印 / 存 PDF</strong>：使用瀏覽器列印功能，已自動隱藏按鈕與地圖，適合列印隨身帶著。</span></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-slate-800 mb-1.5 flex items-center gap-1.5"><i class="fa-solid fa-wand-magic-sparkles text-brand-gold"></i>AI 智慧行程規劃</h4>
+                    <p class="text-[13px] sm:text-sm mb-2">此功能需使用 Google Gemini API。申請方式：</p>
+                    <ol class="list-decimal list-inside space-y-1 text-[13px] sm:text-sm">
+                        <li>到 <strong>aistudio.google.com</strong> 登入 Google 帳號</li>
+                        <li>點擊 <strong>「Get API key」→「Create API key」</strong>，複製金鑰</li>
+                        <li>回到本頁按 <strong>「AI 智慧行程規劃」</strong>，將金鑰貼上並按「儲存金鑰」</li>
+                    </ol>
+                    <p class="text-[11px] sm:text-xs text-slate-400 mt-2">金鑰僅儲存在你自己的瀏覽器（localStorage），不會上傳到任何伺服器。未設定金鑰時，系統會改用內建範本生成行程。</p>
+                </div>
+            </div>
+        </details>
+
         <!-- AI 智慧行程規劃互動產生器 Modal -->
         <div id="ai-generator-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))]" role="dialog" aria-modal="true" aria-labelledby="ai-modal-title">
             <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-7 relative border border-slate-100 max-h-[90vh] overflow-y-auto">
@@ -211,10 +245,10 @@
                         </label>
                         <span class="text-[11px] text-amber-700">（免費額度即可輕鬆規劃）</span>
                     </div>
-                    <div class="flex gap-2">
+                    <div class="flex flex-col sm:flex-row gap-2">
                         <input type="password" id="api-key-input" placeholder="請輸入您的 Gemini API Key (選填)" 
-                               class="flex-1 px-3 py-2 text-base sm:text-xs rounded-xl border border-amber-300 bg-white focus:outline-none focus:ring-2 focus:ring-brand-gold">
-                        <button onclick="saveApiKey()" class="px-3.5 py-2 bg-brand-gold hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition cursor-pointer">
+                               class="flex-1 min-w-0 px-3 py-2.5 text-base sm:text-xs rounded-xl border border-amber-300 bg-white focus:outline-none focus:ring-2 focus:ring-brand-gold">
+                        <button onclick="saveApiKey()" class="shrink-0 px-4 py-2.5 bg-brand-gold hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition cursor-pointer">
                             儲存金鑰
                         </button>
                     </div>
@@ -305,6 +339,77 @@
                     <div><strong class="text-slate-900">行車節奏：</strong>單趟長途車程約 2.5 至 3.5 小時，途中可於屏東休息站稍作停留。</div>
                 </li>
             </ul>
+        </section>
+
+        <!-- 住宿推薦區塊 -->
+        <section class="bg-white rounded-2xl shadow-sm p-5 sm:p-7 mb-6 border border-slate-100">
+            <div class="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-100">
+                <span class="w-8 h-8 rounded-lg bg-brand-goldLight text-brand-gold flex items-center justify-center">
+                    <i class="fa-solid fa-bed"></i>
+                </span>
+                <div>
+                    <h2 class="text-lg sm:text-xl font-bold text-slate-800">台東住宿推薦</h2>
+                    <p class="text-xs text-slate-500">依預算風格挑選，點按鈕可在 Google 地圖搜尋附近住宿</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="rounded-xl border border-slate-200 overflow-hidden flex flex-col">
+                    <div class="bg-teal-700 text-white px-4 py-3 flex items-center gap-2">
+                        <i class="fa-solid fa-backpack text-amber-300"></i>
+                        <h3 class="font-bold text-sm">經濟小資 · 青旅 / 汽車旅館</h3>
+                    </div>
+                    <div class="p-4 flex-1">
+                        <p class="text-xs font-bold text-brand-gold mb-1.5">約 NT$800 – 1,500 / 晚</p>
+                        <ul class="text-xs text-slate-600 space-y-1 mb-3">
+                            <li class="flex gap-1.5"><i class="fa-solid fa-location-dot text-teal-600 mt-0.5 shrink-0"></i>台東市區、池上、關山一帶分店多</li>
+                            <li class="flex gap-1.5"><i class="fa-solid fa-check text-teal-600 mt-0.5 shrink-0"></i>適合行李少、重視睡眠品質</li>
+                        </ul>
+                        <a href="https://www.google.com/maps/search/?api=1&query=台東市+青年旅館" target="_blank" rel="noopener noreferrer" class="mt-auto inline-flex items-center justify-center gap-1.5 w-full py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">搜尋台東青旅</a>
+                    </div>
+                </div>
+                <div class="rounded-xl border border-slate-200 overflow-hidden flex flex-col">
+                    <div class="bg-brand-teal text-white px-4 py-3 flex items-center gap-2">
+                        <i class="fa-solid fa-spa text-amber-300"></i>
+                        <h3 class="font-bold text-sm">舒適慢活 · 設計民宿</h3>
+                    </div>
+                    <div class="p-4 flex-1">
+                        <p class="text-xs font-bold text-brand-gold mb-1.5">約 NT$2,000 – 4,000 / 晚</p>
+                        <ul class="text-xs text-slate-600 space-y-1 mb-3">
+                            <li class="flex gap-1.5"><i class="fa-solid fa-location-dot text-teal-600 mt-0.5 shrink-0"></i>池上伯朗大道周邊、鹿野、鐵花聚落附近</li>
+                            <li class="flex gap-1.5"><i class="fa-solid fa-check text-teal-600 mt-0.5 shrink-0"></i>多為小型獨棟，適合拍照與放空</li>
+                        </ul>
+                        <a href="https://www.google.com/maps/search/?api=1&query=池上+民宿" target="_blank" rel="noopener noreferrer" class="mt-auto inline-flex items-center justify-center gap-1.5 w-full py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">搜尋池上民宿</a>
+                    </div>
+                </div>
+                <div class="rounded-xl border border-slate-200 overflow-hidden flex flex-col">
+                    <div class="bg-brand-gold text-white px-4 py-3 flex items-center gap-2">
+                        <i class="fa-solid fa-hotel text-amber-200"></i>
+                        <h3 class="font-bold text-sm">質感度假 · 飯店 / 溫泉</h3>
+                    </div>
+                    <div class="p-4 flex-1">
+                        <p class="text-xs font-bold text-brand-gold mb-1.5">約 NT$4,000 起 / 晚</p>
+                        <ul class="text-xs text-slate-600 space-y-1 mb-3">
+                            <li class="flex gap-1.5"><i class="fa-solid fa-location-dot text-teal-600 mt-0.5 shrink-0"></i>台東市區、都蘭、知本溫泉一帶</li>
+                            <li class="flex gap-1.5"><i class="fa-solid fa-check text-teal-600 mt-0.5 shrink-0"></i>含早餐、有公共設施，適合犒賞自己</li>
+                        </ul>
+                        <a href="https://www.google.com/maps/search/?api=1&query=台東市+飯店" target="_blank" rel="noopener noreferrer" class="mt-auto inline-flex items-center justify-center gap-1.5 w-full py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">搜尋台東飯店</a>
+                    </div>
+                </div>
+                <div class="rounded-xl border border-slate-200 overflow-hidden flex flex-col">
+                    <div class="bg-slate-700 text-white px-4 py-3 flex items-center gap-2">
+                        <i class="fa-solid fa-house-chimney text-amber-300"></i>
+                        <h3 class="font-bold text-sm">家庭包棟 · 農場民宿</h3>
+                    </div>
+                    <div class="p-4 flex-1">
+                        <p class="text-xs font-bold text-brand-gold mb-1.5">約 NT$6,000 起 / 棟</p>
+                        <ul class="text-xs text-slate-600 space-y-1 mb-3">
+                            <li class="flex gap-1.5"><i class="fa-solid fa-location-dot text-teal-600 mt-0.5 shrink-0"></i>池上、鹿野、長濱鄉村景觀帶</li>
+                            <li class="flex gap-1.5"><i class="fa-solid fa-check text-teal-600 mt-0.5 shrink-0"></i>3–6 人合住划算，可自煮晚餐</li>
+                        </ul>
+                        <a href="https://www.google.com/maps/search/?api=1&query=台東+包棟民宿" target="_blank" rel="noopener noreferrer" class="mt-auto inline-flex items-center justify-center gap-1.5 w-full py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">搜尋包棟民宿</a>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!-- 分日頁籤切換控制器 -->
@@ -449,16 +554,43 @@
 
         function buildLocalItinerary(origin, destination, days, budget, mustVisit) {
             const dayCount = days === '1 日遊' ? 1 : (days === '3 天 2 夜' ? 3 : 2);
-            const spots = mustVisit || '熱門景點';
-            let out = `【${origin} → ${destination}｜${days}｜${budget}】\n\n`;
+            const spots = (mustVisit || '').split(/[、,，;；\/]+/).map(s => s.trim()).filter(Boolean);
+            const isBudget = budget.includes('經濟');
+            const isLuxury = budget.includes('頂級');
+
+            const transport = isBudget ? '大眾運輸＋當地租機車/租車' : (isLuxury ? '包車或租車自駕，行程彈性最高' : '租車自駕，兼顧便利與預算');
+            const lodging = isBudget ? '青旅或汽車旅館（約 NT$800–1,500）' : (isLuxury ? '溫泉度假村或設計旅店（約 NT$4,000 起）' : '精緻民宿或商務旅館（約 NT$2,000–4,000）');
+            const meals = isBudget ? '早餐店＋在地小吃＋自助餐' : (isLuxury ? '老字號餐廳預訂＋特色晚餐' : '在地餐廳＋市集小吃');
+
+            const freeTimeIdeas = [
+                '午後咖啡廳發呆、逛文創小店',
+                '租腳踏車沿海岸線慢慢騎',
+                '找一間在地早餐店吃熱騰騰的一餐',
+                '傍晚看夕陽，順便逛夜市或市集',
+                '早起看日出或熱氣球（依季節）'
+            ];
+
+            let out = `【${origin} → ${destination}｜${days}｜${budget}】\n`;
+            out += `交通方式建議：${transport}\n`;
+            out += `住宿建議：${lodging}\n\n`;
+
             for (let d = 1; d <= dayCount; d++) {
-                out += `■ 第 ${d} 天\n`;
-                out += `  08:30 出發，沿途享受沿海/山景風光。\n`;
-                out += `  12:00 午餐：品嚐當地特色美食。\n`;
-                out += `  14:00 必訪：${spots}\n`;
-                out += `  18:00 自由活動，體驗在地夜生活。\n\n`;
+                out += `■ 第 ${d} 天${dayCount > 1 ? (d === dayCount ? '（最後一天）' : d === 1 ? '（往程）' : '（中繼）') : ''}\n`;
+                out += `  08:00–09:00  ${d === 1 ? `從${origin}出發` : '退房後出發'}，${transport}前往今日據點\n`;
+                if (spots.length) {
+                    const assigned = spots.filter((_, i) => i % dayCount === d - 1);
+                    if (assigned.length) {
+                        assigned.forEach((s, i) => {
+                            out += `  ${i === 0 ? '10:00' : '14:00'}–${i === 0 ? '12:30' : '16:30'}  必訪：${s}\n`;
+                        });
+                    }
+                }
+                out += `  12:30  午餐：${meals}\n`;
+                out += `  17:00  自由活動：${freeTimeIdeas[(d + spots.length) % freeTimeIdeas.length]}\n`;
+                out += `  19:30  晚餐＋${d === dayCount ? `返回${origin}` : '入住住宿休息'}\n\n`;
             }
-            out += '※ 此為範本行程（未設定 Gemini API Key），可再調整細節。';
+
+            out += '※ 此為本地範本行程（未設定 Gemini API Key），已依你填寫的景點與預算調整，可再依實際狀況增刪。';
             return out;
         }
 
@@ -542,10 +674,9 @@
 
             mapInstance = L.map('taitung-map', { zoomControl: true, scrollWheelZoom: false }).setView([22.85, 120.85], 9);
 
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                maxZoom: 18,
-                subdomains: 'abcd',
-                attribution: '&copy; OpenStreetMap &copy; CARTO'
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 19,
+                attribution: 'Tiles &copy; Esri &copy; OpenStreetMap contributors'
             }).addTo(mapInstance);
 
             const day1Coords = [[22.8825, 120.3268], [22.485, 120.545], [22.5071, 120.9614], [22.6468, 121.0315], [22.7524, 121.1462]];
