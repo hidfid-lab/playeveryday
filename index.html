@@ -426,9 +426,14 @@
                             <i class="fa-solid fa-clipboard-check text-brand-teal"></i>
                             <span>生成結果</span>
                         </h4>
-                        <button onclick="copyAiResult()" class="text-xs font-bold text-brand-teal hover:text-teal-700 flex items-center gap-1 cursor-pointer">
-                            <i class="fa-regular fa-copy"></i> 複製行程
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button id="apply-result-btn" onclick="applyLastGeneratedJson()" class="hidden text-xs font-bold text-pink-600 hover:text-pink-700 flex items-center gap-1 cursor-pointer">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> 套用至整頁
+                            </button>
+                            <button onclick="copyAiResult()" class="text-xs font-bold text-brand-teal hover:text-teal-700 flex items-center gap-1 cursor-pointer">
+                                <i class="fa-regular fa-copy"></i> 複製行程
+                            </button>
+                        </div>
                     </div>
                     <div id="ai-result-text" class="text-xs sm:text-sm text-slate-700 leading-relaxed bg-slate-50 border border-slate-200 rounded-xl p-3.5 whitespace-pre-wrap max-h-80 overflow-y-auto"></div>
                 </div>
@@ -738,6 +743,7 @@
         const DEFAULT_DOC_TITLE = document.title;
 
         let aiResultText = '';
+        let lastAiJson = null;
 
         const TAB_BUTTON_IDS = { all: 'tab-all', map: 'tab-map', day1: 'tab-day1', day2: 'tab-day2', stay: 'tab-stay', prep: 'tab-prep' };
 
@@ -957,10 +963,12 @@
                 const raw = await callGeminiAPI(prompt, apiKey, true, aiAbortController?.signal);
                 const json = parseAiJson(raw);
                 await applyAiItinerary(json);
-                aiResultText = `已將「${json.title || 'AI 行程'}」套用至整頁！\n\n` + JSON.stringify(json, null, 2).slice(0, 3000);
+                lastAiJson = json;
+                aiResultText = formatJsonItinerary(json);
                 resultEl.textContent = aiResultText;
                 resultBox.classList.remove('hidden');
-                saveGeneratedTrip(`${f.origin} → ${f.destination}｜${f.days}（整頁）`, aiResultText);
+                updateApplyButton();
+                saveGeneratedTrip(`${f.origin} → ${f.destination}｜${f.days}（整頁）`, aiResultText, json);
                 renderSavedTrips();
                 showToast('AI 行程已生成並套用至整頁！');
             } catch (err) {
@@ -974,6 +982,37 @@
                 }
             } finally {
                 stopLoading();
+            }
+        }
+
+        // 將 AI JSON 行程轉成可讀文字
+        function formatJsonItinerary(json) {
+            const lines = [json.title || 'AI 行程', json.subtitle || '', ''];
+            (json.days || []).forEach((d, di) => {
+                lines.push(`■ ${d.theme || `第 ${di + 1} 天`}`);
+                (d.stations || []).forEach(st => {
+                    lines.push(`  ${st.time ? st.time + '  ' : ''}${st.name}${st.stay ? '｜' + st.stay : ''}`);
+                    if (st.desc) lines.push(`    ${st.desc}`);
+                    if (st.bestTime) lines.push(`    最佳時段：${st.bestTime}`);
+                    if (st.food) lines.push(`    美食：${st.food}`);
+                });
+                lines.push('');
+            });
+            return lines.join('\n');
+        }
+
+        function updateApplyButton() {
+            const btn = document.getElementById('apply-result-btn');
+            if (btn) btn.classList.toggle('hidden', !lastAiJson);
+        }
+
+        async function applyLastGeneratedJson() {
+            if (!lastAiJson) { showToast('沒有可套用的行程'); return; }
+            try {
+                await applyAiItinerary(lastAiJson);
+                showToast('已將行程重新套用至整頁！');
+            } catch (e) {
+                showToast('套用失敗：' + e.message);
             }
         }
 
@@ -1105,6 +1144,8 @@
                 }
                 resultEl.textContent = aiResultText;
                 resultBox.classList.remove('hidden');
+                lastAiJson = null;
+                updateApplyButton();
                 saveGeneratedTrip(`${origin} → ${destination}｜${days}`, aiResultText);
                 renderSavedTrips();
                 resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -1138,9 +1179,9 @@
             catch (e) { return []; }
         }
 
-        function saveGeneratedTrip(title, text) {
+        function saveGeneratedTrip(title, text, json) {
             const trips = getSavedTrips().filter(t => !(t.title === title && t.text === text));
-            trips.unshift({ id: Date.now(), title, text, savedAt: new Date().toISOString() });
+            trips.unshift({ id: Date.now(), title, text, json: json || null, savedAt: new Date().toISOString() });
             localStorage.setItem(SAVED_TRIPS_KEY, JSON.stringify(trips.slice(0, 10)));
         }
 
@@ -1171,6 +1212,8 @@
             const trip = getSavedTrips().find(t => t.id === id);
             if (!trip) return;
             aiResultText = trip.text;
+            lastAiJson = trip.json || null;
+            updateApplyButton();
             document.getElementById('ai-result-text').textContent = trip.text;
             document.getElementById('ai-result-box').classList.remove('hidden');
             document.getElementById('ai-result-box').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
