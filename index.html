@@ -836,12 +836,34 @@
             return out;
         }
 
-        // ===== Gemini API 呼叫（含模型降級）=====
-        const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+        // ===== Gemini API 呼叫（動態模型清單 + 降級）=====
+        const GEMINI_MODELS_FALLBACK = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+
+        // 向 Gemini 查詢這把 API Key 實際可用的模型
+        async function getAvailableGeminiModels(apiKey) {
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}&pageSize=100`);
+                if (!res.ok) return [];
+                const data = await res.json();
+                return (data.models || [])
+                    .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
+                    .map(m => (m.name || '').replace('models/', ''))
+                    .filter(n => /gemini/i.test(n) && !/image|tts|embedding|robotics|live|aqa|canvas|computer|learn/i.test(n));
+            } catch (e) {
+                return [];
+            }
+        }
 
         async function callGeminiAPI(prompt, apiKey, jsonMode, signal) {
+            // 動態模型優先（flash 系列排前面），靜態清單墊底
+            const dynamic = await getAvailableGeminiModels(apiKey);
+            dynamic.sort((a, b) => {
+                const score = n => /flash/i.test(n) ? 0 : (/pro/i.test(n) ? 1 : 2);
+                return score(a) - score(b);
+            });
+            const models = [...new Set([...dynamic, ...GEMINI_MODELS_FALLBACK])];
             let lastErr = null;
-            for (const model of GEMINI_MODELS) {
+            for (const model of models) {
                 try {
                     const generationConfig = { temperature: 0.7, maxOutputTokens: jsonMode ? 8192 : 4096 };
                     if (jsonMode) generationConfig.responseMimeType = 'application/json';
