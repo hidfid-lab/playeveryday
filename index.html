@@ -398,6 +398,7 @@
                             <div id="ai-loading-bar" class="h-full bg-gradient-to-r from-brand-teal to-brand-gold rounded-full transition-all duration-500" style="width:5%"></div>
                         </div>
                         <p id="ai-loading-meta" class="text-[11px] text-slate-400 mt-1.5">已等待 0 秒</p>
+                        <button type="button" id="ai-cancel-btn" onclick="cancelAiGeneration()" class="hidden mt-3 px-5 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-600 text-xs font-bold rounded-lg transition cursor-pointer">取消生成</button>
                     </div>
 
                     <button type="submit" id="ai-submit-btn" class="w-full py-3 bg-gradient-to-r from-pink-500 to-rose-400 hover:from-pink-600 hover:to-rose-500 text-white font-bold rounded-xl shadow-md transition cursor-pointer flex items-center justify-center gap-2">
@@ -832,7 +833,7 @@
         // ===== Gemini API 呼叫（含模型降級）=====
         const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
 
-        async function callGeminiAPI(prompt, apiKey, jsonMode) {
+        async function callGeminiAPI(prompt, apiKey, jsonMode, signal) {
             let lastErr = null;
             for (const model of GEMINI_MODELS) {
                 try {
@@ -843,7 +844,8 @@
                         {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig })
+                            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig }),
+                            signal
                         }
                     );
                     if (!res.ok) {
@@ -884,6 +886,9 @@
             };
         }
 
+        let aiAbortController = null;
+        let aiStopLoadingFn = null;
+
         function startLoadingUI() {
             const loading = document.getElementById('ai-loading-box');
             const btn = document.getElementById('ai-submit-btn');
@@ -892,6 +897,8 @@
             btn.disabled = true;
             btn.classList.add('opacity-60', 'cursor-not-allowed');
             resultBox.classList.add('hidden');
+            document.getElementById('ai-cancel-btn').classList.remove('hidden');
+            aiAbortController = new AbortController();
             document.getElementById('ai-loading-bar').style.width = '5%';
             document.getElementById('ai-loading-meta').textContent = '已等待 0 秒';
             const loadStart = Date.now();
@@ -908,12 +915,23 @@
                     else if (sec > 3) txt.textContent = '正在規劃車程路線與時間表...';
                 }
             }, 500);
-            return () => {
+            const stop = () => {
                 clearInterval(loadTimer);
                 loading.classList.add('hidden');
                 btn.disabled = false;
                 btn.classList.remove('opacity-60', 'cursor-not-allowed');
+                document.getElementById('ai-cancel-btn').classList.add('hidden');
+                aiAbortController = null;
+                aiStopLoadingFn = null;
             };
+            aiStopLoadingFn = stop;
+            return stop;
+        }
+
+        function cancelAiGeneration() {
+            if (aiAbortController) aiAbortController.abort();
+            if (aiStopLoadingFn) aiStopLoadingFn();
+            showToast('已取消生成');
         }
 
         async function generateAndApplyTrip(event) {
@@ -936,7 +954,7 @@
 
             try {
                 if (!apiKey) throw new Error('此功能需要 Gemini API Key（請先在上方設定）');
-                const raw = await callGeminiAPI(prompt, apiKey, true);
+                const raw = await callGeminiAPI(prompt, apiKey, true, aiAbortController?.signal);
                 const json = parseAiJson(raw);
                 await applyAiItinerary(json);
                 aiResultText = `已將「${json.title || 'AI 行程'}」套用至整頁！\n\n` + JSON.stringify(json, null, 2).slice(0, 3000);
@@ -946,9 +964,14 @@
                 renderSavedTrips();
                 showToast('AI 行程已生成並套用至整頁！');
             } catch (err) {
-                resultEl.textContent = `生成失敗：${err.message}`;
-                resultBox.classList.remove('hidden');
-                showToast('AI 生成失敗');
+                if (err.name === 'AbortError') {
+                    resultEl.textContent = '已取消生成。';
+                    resultBox.classList.remove('hidden');
+                } else {
+                    resultEl.textContent = `生成失敗：${err.message}`;
+                    resultBox.classList.remove('hidden');
+                    showToast('AI 生成失敗');
+                }
             } finally {
                 stopLoading();
             }
@@ -1058,10 +1081,8 @@
 
         async function generateNewTripWithAI(event) {
             event.preventDefault();
-            const loading = document.getElementById('ai-loading-box');
             const resultBox = document.getElementById('ai-result-box');
             const resultEl = document.getElementById('ai-result-text');
-            const btn = document.getElementById('ai-submit-btn');
             const apiKey = (document.getElementById('api-key-input').value || '').trim()
                 || (localStorage.getItem('gemini_custom_api_key') || '').trim();
 
@@ -1071,32 +1092,13 @@
             const budget = document.getElementById('form-budget').value;
             const mustVisit = document.getElementById('form-mustvisit').value.trim();
 
-            loading.classList.remove('hidden');
-            btn.disabled = true;
-            btn.classList.add('opacity-60', 'cursor-not-allowed');
-            resultBox.classList.add('hidden');
-            document.getElementById('ai-loading-bar').style.width = '5%';
-            document.getElementById('ai-loading-meta').textContent = '已等待 0 秒';
-            const loadStart = Date.now();
-            const loadTimer = setInterval(() => {
-                const sec = Math.floor((Date.now() - loadStart) / 1000);
-                const meta = document.getElementById('ai-loading-meta');
-                const bar = document.getElementById('ai-loading-bar');
-                const txt = document.getElementById('ai-loading-text');
-                if (meta) meta.textContent = `已等待 ${sec} 秒${sec > 20 ? '，行程內容較長請稍候...' : ''}`;
-                if (bar) bar.style.width = Math.min(92, 5 + sec * 3) + '%';
-                if (txt) {
-                    if (sec > 25) txt.textContent = '行程內容較長，正在最後整理...';
-                    else if (sec > 10) txt.textContent = '正在撰寫每日景點與美食建議...';
-                    else if (sec > 3) txt.textContent = '正在規劃車程路線與時間表...';
-                }
-            }, 500);
+            const stopLoading = startLoadingUI();
 
             const prompt = `請以繁體中文規劃一份詳細的${days}旅遊行程：從${origin}前往${destination}。預算風格：${budget}。一定要去的景點或需求：${mustVisit || '無特別指定'}。請輸出純文字行程表，包含每日時間安排、景點介紹、交通方式與美食建議，語氣親切自然。`;
 
             try {
                 if (apiKey) {
-                    aiResultText = await callGeminiAPI(prompt, apiKey, false);
+                    aiResultText = await callGeminiAPI(prompt, apiKey, false, aiAbortController?.signal);
                     if (!aiResultText) throw new Error('AI 未回傳內容，請重試');
                 } else {
                     aiResultText = buildLocalItinerary(origin, destination, days, budget, mustVisit);
@@ -1108,15 +1110,17 @@
                 resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 showToast(apiKey ? 'AI 行程已生成並儲存！' : '已生成範本行程');
             } catch (err) {
-                aiResultText = '';
-                resultEl.textContent = `生成失敗：${err.message}\n\n小提醒：API Key 可至 Google AI Studio 免費取得。若不想設定，可直接使用「一鍵複製純文字」分享現有行程。`;
-                resultBox.classList.remove('hidden');
-                showToast('AI 生成失敗');
+                if (err.name === 'AbortError') {
+                    resultEl.textContent = '已取消生成。';
+                    resultBox.classList.remove('hidden');
+                } else {
+                    aiResultText = '';
+                    resultEl.textContent = `生成失敗：${err.message}\n\n小提醒：API Key 可至 Google AI Studio 免費取得。若不想設定，可直接使用「一鍵複製純文字」分享現有行程。`;
+                    resultBox.classList.remove('hidden');
+                    showToast('AI 生成失敗');
+                }
             } finally {
-                clearInterval(loadTimer);
-                loading.classList.add('hidden');
-                btn.disabled = false;
-                btn.classList.remove('opacity-60', 'cursor-not-allowed');
+                stopLoading();
             }
         }
 
