@@ -342,7 +342,7 @@
         </section>
 
         <!-- 住宿推薦區塊 -->
-        <section class="bg-white rounded-2xl shadow-sm p-5 sm:p-7 mb-6 border border-slate-100">
+        <section id="section-stay" class="hidden print-expand bg-white rounded-2xl shadow-sm p-5 sm:p-7 mb-6 border border-slate-100">
             <div class="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-100">
                 <span class="w-8 h-8 rounded-lg bg-brand-goldLight text-brand-gold flex items-center justify-center">
                     <i class="fa-solid fa-bed"></i>
@@ -414,11 +414,12 @@
 
         <!-- 分日頁籤切換控制器 -->
         <nav class="no-print sticky top-2 z-20 bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-md border border-slate-200/80 mb-6">
-            <ul class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs sm:text-sm font-medium">
+            <ul class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center text-xs sm:text-sm font-medium">
                 <li><button id="tab-all" onclick="switchDayTab('all')" class="w-full py-2.5 px-2 rounded-xl bg-brand-teal text-white shadow-sm transition cursor-pointer">全部展開</button></li>
                 <li><button id="tab-map" onclick="switchDayTab('map')" class="w-full py-2.5 px-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer flex items-center justify-center gap-1.5"><i class="fa-solid fa-map-location-dot text-brand-gold"></i><span>行程地圖</span></button></li>
                 <li><button id="tab-day1" onclick="switchDayTab('day1')" class="w-full py-2.5 px-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer">Day 1 行程</button></li>
                 <li><button id="tab-day2" onclick="switchDayTab('day2')" class="w-full py-2.5 px-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer">Day 2 行程</button></li>
+                <li><button id="tab-stay" onclick="switchDayTab('stay')" class="w-full py-2.5 px-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer flex items-center justify-center gap-1.5"><i class="fa-solid fa-bed text-brand-gold"></i><span>住宿推薦</span></button></li>
             </ul>
         </nav>
 
@@ -440,7 +441,7 @@
                 <div class="w-full h-[55vh] min-h-[340px] sm:h-[480px] rounded-2xl overflow-hidden border border-slate-200 relative z-10 shadow-inner">
                     <div id="taitung-map" class="w-full h-full"></div>
                     <!-- 站點資訊卡（取代無法關閉的 Leaflet popup） -->
-                    <div id="station-detail-card" class="hidden absolute inset-x-3 bottom-3 z-[1200] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-[70%] flex flex-col">
+                    <div id="station-detail-card" class="hidden absolute inset-x-3 bottom-3 z-[1200] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-[55%] sm:max-h-[50%] flex flex-col">
                     </div>
                 </div>
 
@@ -492,6 +493,7 @@
         let day1Polyline = null;
         let day2Polyline = null;
         let currentRouteFilter = 'all';
+        let lastMarkerClickAt = 0;
 
         const itineraryStations = [
             { id: 1, day: 'start', badge: '起點', name: '高雄阿蓮出發地', lat: 22.8825, lng: 120.3268, stay: '07:30 集合', drive: '前往多良約 2.5 小時', desc: '沿國道3號南下接南迴改。', img: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=500&q=80', navUrl: 'https://www.google.com/maps/search/?api=1&query=高雄市阿蓮區' },
@@ -504,7 +506,7 @@
 
         let aiResultText = '';
 
-        const TAB_BUTTON_IDS = { all: 'tab-all', map: 'tab-map', day1: 'tab-day1', day2: 'tab-day2' };
+        const TAB_BUTTON_IDS = { all: 'tab-all', map: 'tab-map', day1: 'tab-day1', day2: 'tab-day2', stay: 'tab-stay' };
 
         function setActiveTabButton(tab) {
             Object.entries(TAB_BUTTON_IDS).forEach(([key, id]) => {
@@ -685,6 +687,12 @@
             day1Polyline = L.polyline(day1Coords, { color: '#0f766e', weight: 5, opacity: 0.88 }).addTo(mapInstance);
             day2Polyline = L.polyline(day2Coords, { color: '#d97706', weight: 5, opacity: 0.9, dashArray: '10, 8' }).addTo(mapInstance);
 
+            mapInstance.on('click', () => {
+                if (Date.now() - lastMarkerClickAt < 400) return;
+                closeStationCard();
+            });
+            mapInstance.on('dragstart', closeStationCard);
+
             itineraryStations.forEach(station => {
                 const badgeBg = station.day === 'start' ? 'bg-slate-800' : (station.day === 'day1' ? 'bg-teal-700' : 'bg-amber-600');
                 const customIcon = L.divIcon({
@@ -697,7 +705,7 @@
                 });
 
                 const marker = L.marker([station.lat, station.lng], { icon: customIcon })
-                    .on('click', () => showStationCard(station))
+                    .on('click', () => { lastMarkerClickAt = Date.now(); showStationCard(station); })
                     .addTo(mapInstance);
                 mapMarkers.push({ station, marker });
             });
@@ -748,7 +756,7 @@
             const card = document.getElementById('station-detail-card');
             if (!card) return;
             card.innerHTML = `
-                <div class="h-32 w-full bg-slate-200 relative overflow-hidden shrink-0">
+                <div class="h-24 sm:h-20 w-full bg-slate-200 relative overflow-hidden shrink-0">
                     <img src="${station.img}" alt="${station.name}" referrerpolicy="no-referrer" loading="lazy" decoding="async" class="w-full h-full object-cover" onerror="this.style.display='none'">
                     <button onclick="closeStationCard()" aria-label="關閉" class="absolute top-2 right-2 w-8 h-8 rounded-full bg-slate-900/60 hover:bg-slate-900/80 text-white flex items-center justify-center transition cursor-pointer">
                         <i class="fa-solid fa-xmark"></i>
@@ -842,12 +850,15 @@
             const secMap = document.getElementById('section-map');
             const secDay1 = document.getElementById('section-day1');
             const secDay2 = document.getElementById('section-day2');
+            const secStay = document.getElementById('section-stay');
 
             secMap.classList.toggle('hidden', tab !== 'map');
             secDay1.classList.toggle('hidden', tab !== 'all' && tab !== 'day1');
             secDay2.classList.toggle('hidden', tab !== 'all' && tab !== 'day2');
+            secStay.classList.toggle('hidden', tab !== 'stay');
 
             setActiveTabButton(tab);
+            closeStationCard();
 
             if (tab === 'map') {
                 initTaitungMap();
