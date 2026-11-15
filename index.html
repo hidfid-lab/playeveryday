@@ -830,6 +830,22 @@
             btn.disabled = true;
             btn.classList.add('opacity-60', 'cursor-not-allowed');
             resultBox.classList.add('hidden');
+            document.getElementById('ai-loading-bar').style.width = '5%';
+            document.getElementById('ai-loading-meta').textContent = '已等待 0 秒';
+            const loadStart = Date.now();
+            const loadTimer = setInterval(() => {
+                const sec = Math.floor((Date.now() - loadStart) / 1000);
+                const meta = document.getElementById('ai-loading-meta');
+                const bar = document.getElementById('ai-loading-bar');
+                const txt = document.getElementById('ai-loading-text');
+                if (meta) meta.textContent = `已等待 ${sec} 秒${sec > 20 ? '，行程內容較長請稍候...' : ''}`;
+                if (bar) bar.style.width = Math.min(92, 5 + sec * 3) + '%';
+                if (txt) {
+                    if (sec > 25) txt.textContent = '行程內容較長，正在最後整理...';
+                    else if (sec > 10) txt.textContent = '正在撰寫每日景點與美食建議...';
+                    else if (sec > 3) txt.textContent = '正在規劃車程路線與時間表...';
+                }
+            }, 500);
 
             const prompt = `請以繁體中文規劃一份詳細的${days}旅遊行程：從${origin}前往${destination}。預算風格：${budget}。一定要去的景點或需求：${mustVisit || '無特別指定'}。請輸出純文字行程表，包含每日時間安排、景點介紹、交通方式與美食建議，語氣親切自然。`;
 
@@ -844,7 +860,7 @@
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 contents: [{ parts: [{ text: prompt }] }],
-                                generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
+                                generationConfig: { temperature: 0.7, maxOutputTokens: 4096 }
                             })
                         }
                     );
@@ -856,6 +872,9 @@
                     const data = await res.json();
                     aiResultText = (data.candidates?.[0]?.content?.parts || [])
                         .map(p => p.text || '').join('').trim();
+                    if (data.candidates?.[0]?.finishReason === 'MAX_TOKENS') {
+                        aiResultText += '\n\n（內容因長度上限被截斷，建議縮短天數或必訪景點後重試）';
+                    }
                     if (aiResultText) break;
                     lastErr = new Error('AI 未回傳內容');
                 } catch (e) {
@@ -881,6 +900,7 @@
                 resultBox.classList.remove('hidden');
                 showToast('AI 生成失敗');
             } finally {
+                clearInterval(loadTimer);
                 loading.classList.add('hidden');
                 btn.disabled = false;
                 btn.classList.remove('opacity-60', 'cursor-not-allowed');
