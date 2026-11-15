@@ -435,6 +435,7 @@
                             </button>
                         </div>
                     </div>
+                    <p id="ai-result-meta" class="hidden text-[11px] text-slate-400 mb-2"></p>
                     <div id="ai-result-text" class="text-xs sm:text-sm text-slate-700 leading-relaxed bg-slate-50 border border-slate-200 rounded-xl p-3.5 whitespace-pre-wrap max-h-80 overflow-y-auto"></div>
                 </div>
 
@@ -943,6 +944,16 @@
 
         let aiAbortController = null;
         let aiStopLoadingFn = null;
+        let aiRunStart = 0;
+
+        function showAiResultMeta(modelOverride) {
+            const meta = document.getElementById('ai-result-meta');
+            if (!meta) return;
+            const sec = aiRunStart ? ((Date.now() - aiRunStart) / 1000).toFixed(1) : '0';
+            const model = modelOverride || aiCurrentModel || '未知模型';
+            meta.textContent = `⏱️ 本次生成耗時 ${sec} 秒 ・ 使用模型：${model}`;
+            meta.classList.remove('hidden');
+        }
 
         function startLoadingUI() {
             const loading = document.getElementById('ai-loading-box');
@@ -955,6 +966,9 @@
             document.getElementById('ai-cancel-btn').classList.remove('hidden');
             aiAbortController = new AbortController();
             aiCurrentModel = '';
+            aiRunStart = Date.now();
+            const metaEl = document.getElementById('ai-result-meta');
+            if (metaEl) metaEl.classList.add('hidden');
             document.getElementById('ai-loading-bar').style.width = '5%';
             document.getElementById('ai-loading-meta').textContent = '已等待 0 秒';
             const loadStart = Date.now();
@@ -1023,6 +1037,7 @@
                 updateApplyButton();
                 saveGeneratedTrip(`${f.origin} → ${f.destination}｜${f.days}（整頁）`, aiResultText, json);
                 renderSavedTrips();
+                showAiResultMeta();
                 showToast('AI 行程已生成並套用至整頁！');
             } catch (err) {
                 if (err.name === 'AbortError') {
@@ -1197,6 +1212,7 @@
                 saveGeneratedTrip(`${origin} → ${destination}｜${days}`, aiResultText);
                 renderSavedTrips();
                 resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                showAiResultMeta(apiKey ? null : '本地範本（免 API Key）');
                 showToast(apiKey ? 'AI 行程已生成並儲存！' : '已生成範本行程');
             } catch (err) {
                 if (err.name === 'AbortError') {
