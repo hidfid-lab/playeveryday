@@ -842,7 +842,8 @@
         // 向 Gemini 查詢這把 API Key 實際可用的模型
         async function getAvailableGeminiModels(apiKey) {
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}&pageSize=100`);
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}&pageSize=100`,
+                    { signal: AbortSignal.timeout ? AbortSignal.timeout(15000) : undefined });
                 if (!res.ok) return [];
                 const data = await res.json();
                 return (data.models || [])
@@ -854,18 +855,28 @@
             }
         }
 
-        async function callGeminiAPI(prompt, apiKey, jsonMode, signal) {
-            // 動態模型優先（flash 系列排前面），靜態清單墊底
+        let aiCurrentModel = '';
+
+        function combineSignals(userSignal, timeoutMs) {
+            const signals = [userSignal, AbortSignal.timeout ? AbortSignal.timeout(timeoutMs) : null].filter(Boolean);
+            if (!signals.length) return undefined;
+            if (signals.length === 1) return signals[0];
+            return AbortSignal.any ? AbortSignal.any(signals) : signals[0];
+        }
+
+        async function callGeminiAPI(prompt, apiKey, jsonMode, signal, onModel) {
+            // 動態模型優先（flash 系列排前面），靜態清單墊底，最多嘗試 6 個
             const dynamic = await getAvailableGeminiModels(apiKey);
             dynamic.sort((a, b) => {
                 const score = n => /flash/i.test(n) ? 0 : (/pro/i.test(n) ? 1 : 2);
                 return score(a) - score(b);
             });
-            const models = [...new Set([...dynamic, ...GEMINI_MODELS_FALLBACK])];
+            const models = [...new Set([...dynamic, ...GEMINI_MODELS_FALLBACK])].slice(0, 6);
             let lastErr = null;
             for (const model of models) {
+                if (onModel) onModel(model);
                 try {
-                    const generationConfig = { temperature: 0.7, maxOutputTokens: jsonMode ? 8192 : 4096 };
+                    const generationConfig = { temperature: 0.7, maxOutputTokens: jsonMode ? 6000 : 4096 };
                     if (jsonMode) generationConfig.responseMimeType = 'application/json';
                     const res = await fetch(
                         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
@@ -873,7 +884,7 @@
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig }),
-                            signal
+                            signal: combineSignals(signal, 75000)
                         }
                     );
                     if (!res.ok) {
@@ -927,6 +938,7 @@
             resultBox.classList.add('hidden');
             document.getElementById('ai-cancel-btn').classList.remove('hidden');
             aiAbortController = new AbortController();
+            aiCurrentModel = '';
             document.getElementById('ai-loading-bar').style.width = '5%';
             document.getElementById('ai-loading-meta').textContent = '已等待 0 秒';
             const loadStart = Date.now();
@@ -938,9 +950,11 @@
                 if (meta) meta.textContent = `已等待 ${sec} 秒${sec > 20 ? '，行程內容較長請稍候...' : ''}`;
                 if (bar) bar.style.width = Math.min(92, 5 + sec * 3) + '%';
                 if (txt) {
-                    if (sec > 25) txt.textContent = '行程內容較長，正在最後整理...';
-                    else if (sec > 10) txt.textContent = '正在撰寫每日景點與美食建議...';
-                    else if (sec > 3) txt.textContent = '正在規劃車程路線與時間表...';
+                    const modelTag = aiCurrentModel ? `（${aiCurrentModel}）` : '';
+                    if (sec > 25) txt.textContent = `行程內容較長，正在最後整理...${modelTag}`;
+                    else if (sec > 10) txt.textContent = `正在撰寫每日景點與美食建議...${modelTag}`;
+                    else if (sec > 3) txt.textContent = `正在規劃車程路線與時間表...${modelTag}`;
+                    else txt.textContent = `Gemini AI 正在為您量身規劃...${modelTag}`;
                 }
             }, 500);
             const stop = () => {
@@ -982,7 +996,7 @@
 
             try {
                 if (!apiKey) throw new Error('此功能需要 Gemini API Key（請先在上方設定）');
-                const raw = await callGeminiAPI(prompt, apiKey, true, aiAbortController?.signal);
+                const raw = await callGeminiAPI(prompt, apiKey, true, aiAbortController?.signal, m => { aiCurrentModel = m; });
                 const json = parseAiJson(raw);
                 await applyAiItinerary(json);
                 lastAiJson = json;
@@ -1053,7 +1067,7 @@
                     gsrnamespace: 6, gsrlimit: 6, prop: 'imageinfo',
                     iiprop: 'url|mime', iiurlwidth: 800, format: 'json', origin: '*'
                 });
-                const res = await fetch(url);
+                const res = await fetch(url, { signal: AbortSignal.timeout ? AbortSignal.timeout(15000) : undefined });
                 const data = await res.json();
                 const pages = data?.query?.pages || {};
                 const sorted = Object.values(pages).sort((a, b) => (a.index || 0) - (b.index || 0));
@@ -1159,7 +1173,7 @@
 
             try {
                 if (apiKey) {
-                    aiResultText = await callGeminiAPI(prompt, apiKey, false, aiAbortController?.signal);
+                    aiResultText = await callGeminiAPI(prompt, apiKey, false, aiAbortController?.signal, m => { aiCurrentModel = m; });
                     if (!aiResultText) throw new Error('AI 未回傳內容，請重試');
                 } else {
                     aiResultText = buildLocalItinerary(origin, destination, days, budget, mustVisit);
