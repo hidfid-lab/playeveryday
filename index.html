@@ -472,14 +472,7 @@
 
         <!-- 分日頁籤切換控制器 -->
         <nav class="no-print sticky top-2 z-20 bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-md border border-slate-200/80 mb-6">
-            <ul class="grid grid-cols-2 sm:grid-cols-6 gap-2 text-center text-xs sm:text-sm font-medium">
-                <li><button id="tab-all" onclick="switchDayTab('all')" class="w-full py-2.5 px-2 rounded-xl bg-brand-teal text-white shadow-sm transition cursor-pointer">全部展開</button></li>
-                <li><button id="tab-map" onclick="switchDayTab('map')" class="w-full py-2.5 px-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer flex items-center justify-center gap-1.5"><i class="fa-solid fa-map-location-dot text-brand-gold"></i><span>行程地圖</span></button></li>
-                <li><button id="tab-day1" onclick="switchDayTab('day1')" class="w-full py-2.5 px-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer">Day 1 行程</button></li>
-                <li><button id="tab-day2" onclick="switchDayTab('day2')" class="w-full py-2.5 px-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer">Day 2 行程</button></li>
-                <li><button id="tab-stay" onclick="switchDayTab('stay')" class="w-full py-2.5 px-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer flex items-center justify-center gap-1.5"><i class="fa-solid fa-bed text-brand-gold"></i><span>住宿推薦</span></button></li>
-                <li><button id="tab-prep" onclick="switchDayTab('prep')" class="w-full py-2.5 px-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer flex items-center justify-center gap-1.5"><i class="fa-solid fa-list-check text-brand-teal"></i><span>行前規劃</span></button></li>
-            </ul>
+            <div id="tab-bar" class="flex flex-wrap gap-2 text-center text-xs sm:text-sm font-medium"></div>
         </nav>
 
         <!-- 互動行程地圖分頁區塊 -->
@@ -488,13 +481,9 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
                     <div>
                         <span class="text-xs font-bold text-brand-teal uppercase tracking-wider block">INTERACTIVE ROUTE MAP</span>
-                        <h2 class="text-lg sm:text-xl font-bold text-slate-800">高雄阿蓮往返台東 · 全線互動地圖</h2>
+                        <h2 id="map-route-title" class="text-lg sm:text-xl font-bold text-slate-800">高雄阿蓮往返台東 · 全線互動地圖</h2>
                     </div>
-                    <ul class="flex flex-wrap gap-2 text-xs font-medium">
-                        <li><button id="route-all" onclick="filterMapRoute('all')" class="px-3 py-2 rounded-xl bg-slate-800 text-white shadow-xs transition cursor-pointer whitespace-nowrap">全覽</button></li>
-                        <li><button id="route-day1" onclick="filterMapRoute('day1')" class="px-3 py-2 rounded-xl bg-teal-50 text-brand-teal border border-teal-200 transition cursor-pointer whitespace-nowrap">Day1 南迴</button></li>
-                        <li><button id="route-day2" onclick="filterMapRoute('day2')" class="px-3 py-2 rounded-xl bg-amber-50 text-brand-gold border border-amber-200 transition cursor-pointer whitespace-nowrap">Day2 縱谷</button></li>
-                    </ul>
+                    <ul id="route-filter-bar" class="flex flex-wrap gap-2 text-xs font-medium"></ul>
                 </div>
 
                 <div class="w-full h-[55vh] min-h-[340px] sm:h-[480px] rounded-2xl overflow-hidden border border-slate-200 relative z-10 shadow-inner">
@@ -514,27 +503,8 @@
             </div>
         </section>
 
-        <!-- DAY 1 行程區塊 -->
-        <section id="section-day1" class="print-expand mb-10">
-            <div class="bg-gradient-to-r from-brand-teal to-teal-600 text-white rounded-2xl p-5 mb-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                    <span class="text-xs uppercase tracking-wider text-amber-300 font-bold block mb-1">DAY 01 · 啟程向東</span>
-                    <h2 class="text-xl sm:text-2xl font-bold">第一天：南迴海景與台東市區微醺夜</h2>
-                </div>
-            </div>
-            <ul id="day1-list" class="space-y-4"></ul>
-        </section>
-
-        <!-- DAY 2 行程區塊 -->
-        <section id="section-day2" class="print-expand">
-            <div class="bg-gradient-to-r from-amber-600 to-brand-gold text-white rounded-2xl p-5 mb-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                    <span class="text-xs uppercase tracking-wider text-teal-100 font-bold block mb-1">DAY 02 · 縱谷漫遊</span>
-                    <h2 class="text-xl sm:text-2xl font-bold">第二天：縱谷田園風光與熱氣球故鄉</h2>
-                </div>
-            </div>
-            <ul id="day2-list" class="space-y-4"></ul>
-        </section>
+        <!-- 行程天數區塊（由 JS 依天數動態產生） -->
+        <div id="day-sections"></div>
         <!-- 住宿推薦區塊 -->
         <section id="section-stay" class="hidden print-expand bg-white rounded-2xl shadow-sm p-5 sm:p-7 mb-6 border border-slate-100">
             <div class="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-100">
@@ -722,18 +692,17 @@
     <script>
         let mapInstance = null;
         let mapMarkers = [];
-        let day1Polyline = null;
-        let day2Polyline = null;
+        let dayPolylines = {};
         let currentRouteFilter = 'all';
         let lastMarkerClickAt = 0;
 
         const itineraryStations = [
-            { id: 1, day: 'start', badge: '起點', name: '高雄阿蓮出發地', lat: 22.8825, lng: 120.3268, stay: '07:30 集合', drive: '前往多良約 2.5 小時', desc: '沿國道3號南下接南迴改，太平洋海平線一路相伴。', img: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/8/87/%E5%8F%B0%E6%9D%B1%E7%B8%A3%E5%8F%B0%E6%9D%B1%E5%B8%82_%E5%8D%97%E8%BF%B4%E5%85%AC%E8%B7%AF_-_panoramio.jpg/960px-%E5%8F%B0%E6%9D%B1%E7%B8%A3%E5%8F%B0%E6%9D%B1%E5%B8%82_%E5%8D%97%E8%BF%B4%E5%85%AC%E8%B7%AF_-_panoramio.jpg', navUrl: 'https://www.google.com/maps/search/?api=1&query=高雄市阿蓮區', hours: '建議 07:00 前集合', bestTime: '早出發避開國道壅塞', food: '阿蓮老街早餐店、便利商店', parking: '集合點附停車場', tips: '出發前加滿油，南迴公路服務區較少；建議下載離線地圖備用。' },
-            { id: 2, day: 'day1', badge: 'D1-1', name: '多良觀光車站', lat: 22.5071, lng: 120.9614, stay: '預估停留 1.5 小時', drive: '距離上一站 2.5 小時', desc: '全台最美海景車站之一，月台上直接面向太平洋。', img: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/62/Overlooking_the_ocean_at_Duoliang_Train_Station.jpg/960px-Overlooking_the_ocean_at_Duoliang_Train_Station.jpg', navUrl: 'https://www.google.com/maps/search/?api=1&query=多良觀光車站', hours: '月台全天開放', bestTime: '清晨日出或傍晚藍調時刻', food: '鐵道便當、南迴公路沿線小吃', parking: '車站前免費停車場', tips: '站在月台往台東方向拍可同時入鏡海與山；請勿跨越安全線靠近軌道。' },
-            { id: 3, day: 'day1', badge: 'D1-2', name: '華源海灣', lat: 22.6468, lng: 121.0315, stay: '海景美拍順遊', drive: '距離多良 20 分鐘', desc: '椰林大道與湛藍海灣，東海岸最美沙灘之一。', img: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/63/Coastal_scenery_in_Taitung_19970202_01.jpg/960px-Coastal_scenery_in_Taitung_19970202_01.jpg', navUrl: 'https://www.google.com/maps/search/?api=1&query=台東華源海灣', hours: '全天開放', bestTime: '日落時分（17:00–18:00）', food: '椰林大道旁咖啡廳、海鮮餐廳', parking: '華源海灣停車場（假日建議早到）', tips: '可租 SUP 或海灘車；傍晚光線最柔和，適合拍剪影。' },
-            { id: 4, day: 'day1', badge: 'D1-3', name: '鐵花新聚落', lat: 22.7524, lng: 121.1462, stay: '17:30 晚間漫步', drive: '距離華源 30 分鐘', desc: '彩繪熱氣球燈海與文創市集，台東夜生活精華。', img: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/5/53/Taitung_Tourism_Night_Market02.jpg/960px-Taitung_Tourism_Night_Market02.jpg', navUrl: 'https://www.google.com/maps/search/?api=1&query=鐵花新聚落', hours: '市集約 17:00–21:00，燈海點燈後最美', bestTime: '夜晚點燈後（19:30 後）', food: '鐵花便當、炸物、手搖飲', parking: '聚落周邊停車場', tips: '熱氣球裝置藝術適合夜拍；假日人潮多，建議平日前往或工作日晚上。' },
-            { id: 5, day: 'day2', badge: 'D2-1', name: '鹿野高台', lat: 22.9126, lng: 121.1213, stay: '09:15 停留 1.5 小時', drive: '距離市區 45 分鐘', desc: '熱氣球故鄉大草原，360 度縱谷平原視野。', img: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/9/90/%E9%B9%BF%E9%87%8E%E9%AB%98%E5%8F%B0_Luye_Gaotai_-_panoramio.jpg/960px-%E9%B9%BF%E9%87%8E%E9%AB%98%E5%8F%B0_Luye_Gaotai_-_panoramio.jpg', navUrl: 'https://www.google.com/maps/search/?api=1&query=鹿野高台', hours: '全天開放', bestTime: '日出時分或熱氣球季（約 10–4 月）', food: '高台無餐飲，建議自備水與輕食', parking: '高台停車場（假日易滿）', tips: '清晨有雲海機率；可租電動輔助自行車環繞草原，注意高原日曬。' },
-            { id: 6, day: 'day2', badge: 'D2-2', name: '池上伯朗大道', lat: 23.0975, lng: 121.2155, stay: '11:40 午餐與單車', drive: '距離鹿野 40 分鐘', desc: '無邊際稻浪與金城武樹，縱谷最經典的單車道。', img: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/4/41/2023-09-13_Mr._Brown_Avenue.jpg/960px-2023-09-13_Mr._Brown_Avenue.jpg', navUrl: 'https://www.google.com/maps/search/?api=1&query=池上伯朗大道', hours: '全天開放', bestTime: '稻浪季 6–8 月，日出與夕陽最佳', food: '池上便當、米國學校周邊小吃', parking: '大道入口停車場', tips: '單車道全長約 7.5km，建議租單車慢慢騎；金城武樹位於大道中段，可順路打卡。' }
+            { id: 1, day: 0, badge: '起點', name: '高雄阿蓮出發地', lat: 22.8825, lng: 120.3268, stay: '07:30 集合', drive: '前往多良約 2.5 小時', desc: '沿國道3號南下接南迴改，太平洋海平線一路相伴。', img: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/8/87/%E5%8F%B0%E6%9D%B1%E7%B8%A3%E5%8F%B0%E6%9D%B1%E5%B8%82_%E5%8D%97%E8%BF%B4%E5%85%AC%E8%B7%AF_-_panoramio.jpg/960px-%E5%8F%B0%E6%9D%B1%E7%B8%A3%E5%8F%B0%E6%9D%B1%E5%B8%82_%E5%8D%97%E8%BF%B4%E5%85%AC%E8%B7%AF_-_panoramio.jpg', navUrl: 'https://www.google.com/maps/search/?api=1&query=高雄市阿蓮區', hours: '建議 07:00 前集合', bestTime: '早出發避開國道壅塞', food: '阿蓮老街早餐店、便利商店', parking: '集合點附停車場', tips: '出發前加滿油，南迴公路服務區較少；建議下載離線地圖備用。' },
+            { id: 2, day: 1, badge: 'D1-1', name: '多良觀光車站', lat: 22.5071, lng: 120.9614, stay: '預估停留 1.5 小時', drive: '距離上一站 2.5 小時', desc: '全台最美海景車站之一，月台上直接面向太平洋。', img: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/62/Overlooking_the_ocean_at_Duoliang_Train_Station.jpg/960px-Overlooking_the_ocean_at_Duoliang_Train_Station.jpg', navUrl: 'https://www.google.com/maps/search/?api=1&query=多良觀光車站', hours: '月台全天開放', bestTime: '清晨日出或傍晚藍調時刻', food: '鐵道便當、南迴公路沿線小吃', parking: '車站前免費停車場', tips: '站在月台往台東方向拍可同時入鏡海與山；請勿跨越安全線靠近軌道。' },
+            { id: 3, day: 1, badge: 'D1-2', name: '華源海灣', lat: 22.6468, lng: 121.0315, stay: '海景美拍順遊', drive: '距離多良 20 分鐘', desc: '椰林大道與湛藍海灣，東海岸最美沙灘之一。', img: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/63/Coastal_scenery_in_Taitung_19970202_01.jpg/960px-Coastal_scenery_in_Taitung_19970202_01.jpg', navUrl: 'https://www.google.com/maps/search/?api=1&query=台東華源海灣', hours: '全天開放', bestTime: '日落時分（17:00–18:00）', food: '椰林大道旁咖啡廳、海鮮餐廳', parking: '華源海灣停車場（假日建議早到）', tips: '可租 SUP 或海灘車；傍晚光線最柔和，適合拍剪影。' },
+            { id: 4, day: 1, badge: 'D1-3', name: '鐵花新聚落', lat: 22.7524, lng: 121.1462, stay: '17:30 晚間漫步', drive: '距離華源 30 分鐘', desc: '彩繪熱氣球燈海與文創市集，台東夜生活精華。', img: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/5/53/Taitung_Tourism_Night_Market02.jpg/960px-Taitung_Tourism_Night_Market02.jpg', navUrl: 'https://www.google.com/maps/search/?api=1&query=鐵花新聚落', hours: '市集約 17:00–21:00，燈海點燈後最美', bestTime: '夜晚點燈後（19:30 後）', food: '鐵花便當、炸物、手搖飲', parking: '聚落周邊停車場', tips: '熱氣球裝置藝術適合夜拍；假日人潮多，建議平日前往或工作日晚上。' },
+            { id: 5, day: 2, badge: 'D2-1', name: '鹿野高台', lat: 22.9126, lng: 121.1213, stay: '09:15 停留 1.5 小時', drive: '距離市區 45 分鐘', desc: '熱氣球故鄉大草原，360 度縱谷平原視野。', img: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/9/90/%E9%B9%BF%E9%87%8E%E9%AB%98%E5%8F%B0_Luye_Gaotai_-_panoramio.jpg/960px-%E9%B9%BF%E9%87%8E%E9%AB%98%E5%8F%B0_Luye_Gaotai_-_panoramio.jpg', navUrl: 'https://www.google.com/maps/search/?api=1&query=鹿野高台', hours: '全天開放', bestTime: '日出時分或熱氣球季（約 10–4 月）', food: '高台無餐飲，建議自備水與輕食', parking: '高台停車場（假日易滿）', tips: '清晨有雲海機率；可租電動輔助自行車環繞草原，注意高原日曬。' },
+            { id: 6, day: 2, badge: 'D2-2', name: '池上伯朗大道', lat: 23.0975, lng: 121.2155, stay: '11:40 午餐與單車', drive: '距離鹿野 40 分鐘', desc: '無邊際稻浪與金城武樹，縱谷最經典的單車道。', img: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/4/41/2023-09-13_Mr._Brown_Avenue.jpg/960px-2023-09-13_Mr._Brown_Avenue.jpg', navUrl: 'https://www.google.com/maps/search/?api=1&query=池上伯朗大道', hours: '全天開放', bestTime: '稻浪季 6–8 月，日出與夕陽最佳', food: '池上便當、米國學校周邊小吃', parking: '大道入口停車場', tips: '單車道全長約 7.5km，建議租單車慢慢騎；金城武樹位於大道中段，可順路打卡。' }
         ];
 
         // 預設行程快照（AI 生成後可還原）
@@ -742,19 +711,60 @@
         const DEFAULT_SUBTITLE = document.querySelector('header p') ? document.querySelector('header p').textContent : '';
         const DEFAULT_DOC_TITLE = document.title;
 
+        // ===== 動態天數支援 =====
+        const DAY_COLORS = [
+            { solid: 'bg-teal-700', soft: 'bg-brand-tealLight', text: 'text-brand-teal', grad: 'from-brand-teal to-teal-600', line: '#0f766e' },
+            { solid: 'bg-amber-600', soft: 'bg-brand-goldLight', text: 'text-brand-gold', grad: 'from-amber-600 to-brand-gold', line: '#d97706' },
+            { solid: 'bg-rose-600', soft: 'bg-rose-50', text: 'text-rose-600', grad: 'from-rose-600 to-pink-500', line: '#e11d48' },
+            { solid: 'bg-violet-600', soft: 'bg-violet-50', text: 'text-violet-600', grad: 'from-violet-600 to-purple-500', line: '#7c3aed' }
+        ];
+        const dayColor = n => DAY_COLORS[(n - 1) % DAY_COLORS.length];
+        const DAY_CN = ['一', '二', '三', '四', '五', '六', '七'];
+        const DEFAULT_DAY_THEMES = { 1: '南迴海景與台東微醺夜', 2: '縱谷田園風光與熱氣球故鄉' };
+        let dayThemes = { ...DEFAULT_DAY_THEMES };
+        const getMaxDay = () => Math.max(0, ...itineraryStations.map(s => s.day));
+        const getDayStations = n => itineraryStations.filter(s => s.day === n);
+
         let aiResultText = '';
         let lastAiJson = null;
 
-        const TAB_BUTTON_IDS = { all: 'tab-all', map: 'tab-map', day1: 'tab-day1', day2: 'tab-day2', stay: 'tab-stay', prep: 'tab-prep' };
+        // ===== 動態頁籤列 =====
+        function renderTabBar() {
+            const bar = document.getElementById('tab-bar');
+            if (!bar) return;
+            const maxDay = getMaxDay();
+            const defs = [
+                { t: 'all', label: '全部展開', icon: '' },
+                { t: 'map', label: '行程地圖', icon: '<i class="fa-solid fa-map-location-dot text-brand-gold"></i>' },
+                ...Array.from({ length: maxDay }, (_, i) => ({ t: `day:${i + 1}`, label: `Day ${i + 1} 行程`, icon: '' })),
+                { t: 'stay', label: '住宿推薦', icon: '<i class="fa-solid fa-bed text-brand-gold"></i>' },
+                { t: 'prep', label: '行前規劃', icon: '<i class="fa-solid fa-list-check text-brand-teal"></i>' }
+            ];
+            bar.innerHTML = defs.map(d =>
+                `<button data-tab="${d.t}" onclick="switchDayTab('${d.t}')" class="tab-btn flex-1 min-w-[5.5rem] px-3 py-2.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5">${d.icon}<span>${d.label}</span></button>`
+            ).join('');
+            setActiveTabButton('all');
+        }
 
         function setActiveTabButton(tab) {
-            Object.entries(TAB_BUTTON_IDS).forEach(([key, id]) => {
-                const btn = document.getElementById(id);
-                if (!btn) return;
-                const active = key === tab;
-                btn.className = 'w-full py-2.5 px-2 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ' +
+            document.querySelectorAll('#tab-bar .tab-btn').forEach(btn => {
+                const active = btn.dataset.tab === tab;
+                btn.className = 'tab-btn flex-1 min-w-[5.5rem] px-3 py-2.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 ' +
                     (active ? 'bg-brand-teal text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100');
             });
+        }
+
+        // 資料變更後統一重繪所有動態區塊
+        function refreshAllViews() {
+            renderDaySections();
+            renderTabBar();
+            renderMapStationCards();
+            renderRouteFilters();
+            if (mapInstance) {
+                refreshMapLayers();
+                setActiveRouteButton('all');
+                filterMapRoute('all');
+            }
         }
 
         function toggleAiGeneratorModal(show) {
@@ -868,7 +878,13 @@
             // 動態模型優先（flash 系列排前面），靜態清單墊底，最多嘗試 6 個
             const dynamic = await getAvailableGeminiModels(apiKey);
             dynamic.sort((a, b) => {
-                const score = n => /flash/i.test(n) ? 0 : (/pro/i.test(n) ? 1 : 2);
+                // 穩定版號 flash 優先；latest/exp/preview 別名排最後（通常較慢）
+                const score = n => {
+                    if (/latest|exp|preview|canary/i.test(n)) return 3;
+                    if (/flash/i.test(n)) return 0;
+                    if (/pro/i.test(n)) return 1;
+                    return 2;
+                };
                 return score(a) - score(b);
             });
             const models = [...new Set([...dynamic, ...GEMINI_MODELS_FALLBACK])].slice(0, 6);
@@ -984,12 +1000,13 @@
                 || (localStorage.getItem('gemini_custom_api_key') || '').trim();
             const f = collectTripForm();
             const stopLoading = startLoadingUI();
+            const dayCount = f.days === '1 日遊' ? 1 : (f.days === '3 天 2 夜' ? 3 : 2);
 
             const prompt = `請只輸出 JSON，不要 markdown、不要解釋文字。JSON 格式如下：
 {"title":"行程標題","subtitle":"副標語","days":[{"theme":"Day 1 主題","stations":[{"name":"景點名稱","lat":23.0,"lng":121.0,"time":"09:00","stay":"預計停留時間","drive":"距上一站車程","desc":"一句介紹","bestTime":"最佳時段","food":"美食推薦","parking":"停車資訊","tips":"小撇步"}]}]}
 規則：
-1. days 固定 2 天；第一天第一站為出發地（name 填出發地名稱，lat/lng 填出發地座標），其餘站 point 為景點。
-2. 每天 3-4 個站點，總共不超過 8 個。
+1. days 請輸出 ${dayCount} 天；第一天第一站為出發地（name 填出發地名稱，lat/lng 填出發地座標），其餘站 point 為景點。
+2. 每天 3-4 個站點，總共不超過 ${dayCount * 4} 個。
 3. lat/lng 必須是數字（十進位），請盡量準確，這是地圖定位用。
 4. 必訪需求：${f.mustVisit || '無特別指定'}。
 行程需求：從${f.origin}前往${f.destination}，${f.days}，預算風格：${f.budget}。`;
@@ -998,7 +1015,7 @@
                 if (!apiKey) throw new Error('此功能需要 Gemini API Key（請先在上方設定）');
                 const raw = await callGeminiAPI(prompt, apiKey, true, aiAbortController?.signal, m => { aiCurrentModel = m; });
                 const json = parseAiJson(raw);
-                await applyAiItinerary(json);
+                await applyAiItinerary(json, dayCount);
                 lastAiJson = json;
                 aiResultText = formatJsonItinerary(json);
                 resultEl.textContent = aiResultText;
@@ -1085,10 +1102,12 @@
             return result;
         }
 
-        async function applyAiItinerary(json) {
+        async function applyAiItinerary(json, maxDays = 3) {
             const stations = [];
             let fallbackLat = 22.85, fallbackLng = 120.85;
-            (json.days || []).slice(0, 2).forEach((day, di) => {
+            dayThemes = {};
+            (json.days || []).slice(0, maxDays).forEach((day, di) => {
+                if (day.theme) dayThemes[di + 1] = day.theme;
                 (day.stations || []).forEach((st, si) => {
                     const isFirst = di === 0 && si === 0;
                     const lat = parseFloat(st.lat), lng = parseFloat(st.lng);
@@ -1096,7 +1115,7 @@
                     if (isFinite(lng)) fallbackLng = lng;
                     stations.push({
                         id: stations.length + 1,
-                        day: isFirst ? 'start' : (di === 0 ? 'day1' : 'day2'),
+                        day: isFirst ? 0 : (di + 1),
                         badge: isFirst ? '起點' : `D${di + 1}-${si + 1}`,
                         name: st.name || `景點 ${stations.length + 1}`,
                         lat: isFinite(lat) ? lat : fallbackLat,
@@ -1126,31 +1145,24 @@
             if (h1 && json.title) h1.textContent = `❤️ ${json.title} ❤️`;
             if (sub && json.subtitle) sub.textContent = json.subtitle;
             if (json.title) document.title = `${json.title} | 專屬行程手冊`;
+            const mapTitle = document.getElementById('map-route-title');
+            if (mapTitle && json.title) mapTitle.textContent = `${json.title} · 全線互動地圖`;
 
-            renderItineraryLists();
-            renderMapStationCards();
-            if (mapInstance) {
-                refreshMapLayers();
-                setActiveRouteButton('all');
-                filterMapRoute('all');
-            }
+            refreshAllViews();
         }
 
         function resetItinerary() {
             itineraryStations.length = 0;
             DEFAULT_ITINERARY.forEach(s => itineraryStations.push({ ...s }));
+            dayThemes = { ...DEFAULT_DAY_THEMES };
             const h1 = document.querySelector('header h1');
             const sub = document.querySelector('header p');
             if (h1) h1.textContent = DEFAULT_TITLE;
             if (sub) sub.textContent = DEFAULT_SUBTITLE;
             document.title = DEFAULT_DOC_TITLE;
-            renderItineraryLists();
-            renderMapStationCards();
-            if (mapInstance) {
-                refreshMapLayers();
-                setActiveRouteButton('all');
-                filterMapRoute('all');
-            }
+            const mapTitle = document.getElementById('map-route-title');
+            if (mapTitle) mapTitle.textContent = '高雄阿蓮往返台東 · 全線互動地圖';
+            refreshAllViews();
             showToast('已還原預設台東行程！');
         }
 
@@ -1313,25 +1325,26 @@ ${routeText}
         function refreshMapLayers() {
             mapMarkers.forEach(m => { if (mapInstance.hasLayer(m.marker)) m.marker.remove(); });
             mapMarkers = [];
-            if (day1Polyline) { mapInstance.removeLayer(day1Polyline); day1Polyline = null; }
-            if (day2Polyline) { mapInstance.removeLayer(day2Polyline); day2Polyline = null; }
+            Object.values(dayPolylines).forEach(p => { if (mapInstance.hasLayer(p)) p.remove(); });
+            dayPolylines = {};
 
-            const d1 = itineraryStations.filter(s => s.day === 'start' || s.day === 'day1');
-            const d2 = itineraryStations.filter(s => s.day === 'day2');
-            const startSt = itineraryStations.find(s => s.day === 'start');
-            const day1Coords = d1.map(s => [s.lat, s.lng]);
-            const day2Coords = d2.map(s => [s.lat, s.lng]);
-            if (startSt) day2Coords.push([startSt.lat, startSt.lng]);
-
-            if (day1Coords.length > 1) {
-                day1Polyline = L.polyline(day1Coords, { color: '#0f766e', weight: 5, opacity: 0.88 }).addTo(mapInstance);
-            }
-            if (day2Coords.length > 1) {
-                day2Polyline = L.polyline(day2Coords, { color: '#d97706', weight: 5, opacity: 0.9, dashArray: '10, 8' }).addTo(mapInstance);
+            const startSt = itineraryStations.find(s => s.day === 0);
+            const maxDay = getMaxDay();
+            for (let n = 1; n <= maxDay; n++) {
+                const sts = getDayStations(n);
+                if (!sts.length) continue;
+                const coords = sts.map(s => [s.lat, s.lng]);
+                if (n === 1 && startSt) coords.unshift([startSt.lat, startSt.lng]);
+                if (n === maxDay && startSt) coords.push([startSt.lat, startSt.lng]);
+                if (coords.length > 1) {
+                    const opts = { color: dayColor(n).line, weight: 5, opacity: n === 1 ? 0.88 : 0.9 };
+                    if (n > 1) opts.dashArray = '10, 8';
+                    dayPolylines[n] = L.polyline(coords, opts).addTo(mapInstance);
+                }
             }
 
             itineraryStations.forEach(station => {
-                const badgeBg = station.day === 'start' ? 'bg-slate-800' : (station.day === 'day1' ? 'bg-teal-700' : 'bg-amber-600');
+                const badgeBg = station.day === 0 ? 'bg-slate-800' : dayColor(station.day).solid;
                 const customIcon = L.divIcon({
                     className: 'custom-div-icon',
                     html: `<div class="flex flex-col items-center -translate-x-1/2 -translate-y-full">
@@ -1354,15 +1367,37 @@ ${routeText}
             }
         }
 
-        function renderItineraryLists() {
-            const render = (listId, days, badgeCls, badgeTextCls) => {
-                const list = document.getElementById(listId);
-                if (!list) return;
-                const items = itineraryStations.filter(s => days.includes(s.day));
+        function renderDaySections() {
+            const container = document.getElementById('day-sections');
+            if (!container) return;
+            const maxDay = getMaxDay();
+            container.innerHTML = Array.from({ length: maxDay }, (_, i) => {
+                const n = i + 1;
+                const c = dayColor(n);
+                const theme = dayThemes[n] || '';
+                return `
+                <section class="day-section print-expand mb-10" data-day="${n}">
+                    <div class="bg-gradient-to-r ${c.grad} text-white rounded-2xl p-5 mb-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <span class="text-xs uppercase tracking-wider text-amber-300 font-bold block mb-1">DAY 0${n}${theme ? ' · ' + theme : ''}</span>
+                            <h2 class="text-xl sm:text-2xl font-bold">第${DAY_CN[n - 1] || n}天${theme ? '：' + theme : ''}</h2>
+                        </div>
+                    </div>
+                    <ul id="day-list-${n}" class="space-y-4"></ul>
+                </section>`;
+            }).join('');
+
+            for (let n = 1; n <= maxDay; n++) {
+                const list = document.getElementById(`day-list-${n}`);
+                if (!list) continue;
+                const c = dayColor(n);
+                const items = n === 1
+                    ? itineraryStations.filter(s => s.day === 0 || s.day === 1)
+                    : getDayStations(n);
                 list.innerHTML = items.map(st => `
                     <li class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
                         <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-lg ${badgeCls} ${badgeTextCls} font-bold text-sm">${st.stay}</span>
+                            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-lg ${c.soft} ${c.text} font-bold text-sm">${st.stay}</span>
                             <button onclick="focusStationOnMap(${st.id})" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition cursor-pointer">
                                 <i class="fa-solid fa-map-location-dot text-brand-teal"></i> 地圖定位
                             </button>
@@ -1379,9 +1414,7 @@ ${routeText}
                         <p class="text-xs text-slate-400 flex items-center gap-1.5"><i class="fa-solid fa-car-side"></i>${st.drive}</p>
                     </li>
                 `).join('');
-            };
-            render('day1-list', ['start', 'day1'], 'bg-brand-tealLight', 'text-brand-teal');
-            render('day2-list', ['day2'], 'bg-brand-goldLight', 'text-brand-gold');
+            }
         }
 
         function renderMapStationCards() {
@@ -1456,21 +1489,31 @@ ${routeText}
             }
         }
 
-        const ROUTE_BUTTON_IDS = { all: 'route-all', day1: 'route-day1', day2: 'route-day2' };
+        // ===== 動態路線過濾鈕 =====
+        function renderRouteFilters() {
+            const bar = document.getElementById('route-filter-bar');
+            if (!bar) return;
+            const maxDay = getMaxDay();
+            const base = 'px-3 py-2 rounded-xl transition cursor-pointer whitespace-nowrap';
+            bar.innerHTML = `<li><button data-rt="all" onclick="filterMapRoute('all')" class="${base} bg-slate-800 text-white shadow-xs">全覽</button></li>` +
+                Array.from({ length: maxDay }, (_, i) => {
+                    const n = i + 1, c = dayColor(n);
+                    return `<li><button data-rt="day:${n}" onclick="filterMapRoute('day:${n}')" class="${base} ${c.soft} ${c.text} border ${n === 1 ? 'border-teal-200' : n === 2 ? 'border-amber-200' : 'border-slate-200'}">Day${n}</button></li>`;
+                }).join('');
+            setActiveRouteButton('all');
+        }
 
         function setActiveRouteButton(type) {
-            Object.entries(ROUTE_BUTTON_IDS).forEach(([key, id]) => {
-                const btn = document.getElementById(id);
-                if (!btn) return;
-                const active = key === type;
+            document.querySelectorAll('#route-filter-bar [data-rt]').forEach(btn => {
+                const active = btn.dataset.rt === type;
                 if (active) {
                     btn.className = 'px-3 py-2 rounded-xl bg-slate-800 text-white shadow-xs transition cursor-pointer whitespace-nowrap';
-                } else if (key === 'day1') {
-                    btn.className = 'px-3 py-2 rounded-xl bg-teal-50 text-brand-teal border border-teal-200 transition cursor-pointer whitespace-nowrap';
-                } else if (key === 'day2') {
-                    btn.className = 'px-3 py-2 rounded-xl bg-amber-50 text-brand-gold border border-amber-200 transition cursor-pointer whitespace-nowrap';
-                } else {
+                } else if (btn.dataset.rt === 'all') {
                     btn.className = 'px-3 py-2 rounded-xl bg-slate-100 text-slate-600 border border-slate-200 transition cursor-pointer whitespace-nowrap';
+                } else {
+                    const n = parseInt(btn.dataset.rt.split(':')[1], 10);
+                    const c = dayColor(n);
+                    btn.className = `px-3 py-2 rounded-xl ${c.soft} ${c.text} border transition cursor-pointer whitespace-nowrap ${n === 1 ? 'border-teal-200' : n === 2 ? 'border-amber-200' : 'border-slate-200'}`;
                 }
             });
         }
@@ -1480,10 +1523,11 @@ ${routeText}
             currentRouteFilter = type;
             setActiveRouteButton(type);
 
+            const dayMatch = type.match(/^day:(\d+)$/);
+            const dayNum = dayMatch ? parseInt(dayMatch[1], 10) : null;
             const matches = (station) => {
                 if (type === 'all') return true;
-                if (type === 'day1') return station.day === 'day1' || station.day === 'start';
-                return station.day === 'day2';
+                return station.day === dayNum || (dayNum === 1 && station.day === 0);
             };
 
             const visibleMarkers = [];
@@ -1496,14 +1540,11 @@ ${routeText}
                 }
             });
 
-            if (day1Polyline) {
-                if (type === 'day2') { if (mapInstance.hasLayer(day1Polyline)) day1Polyline.remove(); }
-                else if (!mapInstance.hasLayer(day1Polyline)) day1Polyline.addTo(mapInstance);
-            }
-            if (day2Polyline) {
-                if (type === 'day1') { if (mapInstance.hasLayer(day2Polyline)) day2Polyline.remove(); }
-                else if (!mapInstance.hasLayer(day2Polyline)) day2Polyline.addTo(mapInstance);
-            }
+            Object.entries(dayPolylines).forEach(([n, p]) => {
+                const show = type === 'all' || (dayNum !== null && parseInt(n, 10) === dayNum);
+                if (show && !mapInstance.hasLayer(p)) p.addTo(mapInstance);
+                if (!show && mapInstance.hasLayer(p)) p.remove();
+            });
 
             if (visibleMarkers.length) {
                 mapInstance.flyToBounds(L.featureGroup(visibleMarkers).getBounds().pad(0.2), { duration: 0.8 });
@@ -1512,16 +1553,18 @@ ${routeText}
 
         function switchDayTab(tab) {
             const secMap = document.getElementById('section-map');
-            const secDay1 = document.getElementById('section-day1');
-            const secDay2 = document.getElementById('section-day2');
             const secStay = document.getElementById('section-stay');
             const secPrep = document.getElementById('section-prep');
 
             secMap.classList.toggle('hidden', tab !== 'map');
-            secDay1.classList.toggle('hidden', tab !== 'all' && tab !== 'day1');
-            secDay2.classList.toggle('hidden', tab !== 'all' && tab !== 'day2');
             secStay.classList.toggle('hidden', tab !== 'stay');
             secPrep.classList.toggle('hidden', tab !== 'prep');
+
+            document.querySelectorAll('.day-section').forEach(sec => {
+                const n = parseInt(sec.dataset.day, 10);
+                const show = tab === 'all' || tab === `day:${n}`;
+                sec.classList.toggle('hidden', !show);
+            });
 
             setActiveTabButton(tab);
             closeStationCard();
@@ -1532,8 +1575,9 @@ ${routeText}
         }
 
         function copyItineraryText() {
+            const h1Text = (document.querySelector('header h1')?.textContent || '專屬旅遊行程').replace(/[❤️]/g, '').trim();
             const lines = [
-                '【高雄阿蓮出發：台東二天一夜山海慢活之旅】',
+                `【${h1Text}】`,
                 ''
             ];
             itineraryStations.forEach(s => {
@@ -1641,12 +1685,11 @@ ${routeText}
             const pad = n => String(n).padStart(2, '0');
             const fmtDate = d => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
 
-            // 各站預設時段（無法解析時使用）
-            const dayOffsets = { start: 0, day1: 0, day2: 1 };
+            // 各站所屬天數：day 0（出發地）與 day 1 都算第一天
             const fallbackTimes = { 1: '0730', 2: '1030', 3: '1330', 4: '1730', 5: '0915', 6: '1140' };
 
             const events = itineraryStations.map(st => {
-                const offset = dayOffsets[st.day] || 0;
+                const offset = st.day === 0 ? 0 : st.day - 1;
                 const d = new Date(base);
                 d.setDate(d.getDate() + offset);
                 const m = (st.stay || '').match(/(\d{1,2}):(\d{2})/);
@@ -1697,8 +1740,21 @@ ${routeText}
                         <p class="text-[10px] text-teal-700 font-semibold truncate">${st.badge}・${st.stay}</p>
                     </div>
                 </div>`;
-            const day1 = itineraryStations.filter(s => s.day === 'start' || s.day === 'day1');
-            const day2 = itineraryStations.filter(s => s.day === 'day2');
+            const maxDay = getMaxDay();
+            const dayGroups = Array.from({ length: maxDay }, (_, i) => {
+                const n = i + 1;
+                const sts = n === 1
+                    ? itineraryStations.filter(s => s.day === 0 || s.day === 1)
+                    : getDayStations(n);
+                const theme = dayThemes[n] || '';
+                const labelColor = n === 1 ? 'text-teal-700' : n === 2 ? 'text-amber-600' : 'text-rose-600';
+                return `<div class="mt-4">
+                        <p class="text-xs font-bold ${labelColor} mb-1.5">▸ DAY ${n} ・ ${theme}</p>
+                        <div class="flex gap-3 flex-wrap">${sts.map(card).join('')}</div>
+                    </div>`;
+            }).join('');
+            const posterTitle = document.querySelector('header h1')?.textContent?.replace(/[❤️]/g, '').trim() || '專屬旅遊行程';
+            const posterSub = document.querySelector('header p')?.textContent?.trim() || '';
             const doodles = `
                 <svg class="poster-doodle" style="width:90px;top:6%;left:2%" viewBox="0 0 100 100"><circle cx="50" cy="50" r="22" fill="#FBBF24"/><g stroke="#FBBF24" stroke-width="5" stroke-linecap="round"><line x1="50" y1="12" x2="50" y2="24"/><line x1="50" y1="76" x2="50" y2="88"/><line x1="12" y1="50" x2="24" y2="50"/><line x1="76" y1="50" x2="88" y2="50"/><line x1="23" y1="23" x2="32" y2="32"/><line x1="68" y1="68" x2="77" y2="77"/><line x1="77" y1="23" x2="68" y2="32"/><line x1="32" y1="68" x2="23" y2="77"/></g></svg>
                 <svg class="poster-doodle" style="width:80px;top:8%;right:3%" viewBox="0 0 100 100"><ellipse cx="50" cy="38" rx="30" ry="24" fill="#FB7185"/><path d="M28 30 Q50 22 72 30" stroke="#fff" stroke-width="6" fill="none" opacity=".7"/><path d="M30 48 Q50 56 70 48" stroke="#fff" stroke-width="6" fill="none" opacity=".7"/><line x1="50" y1="62" x2="50" y2="78" stroke="#92400E" stroke-width="3"/><rect x="40" y="78" width="20" height="14" rx="3" fill="#B45309"/></svg>
@@ -1712,17 +1768,10 @@ ${routeText}
                 <div class="relative flex flex-col h-full">
                     <div class="text-center">
                         <div class="text-2xl mb-1">🌴 🏝️ ☀️ 🌺 🎈</div>
-                        <div class="poster-title">高雄阿蓮出發：台東二天一夜山海慢活之旅</div>
-                        <div class="poster-sub mt-1">南迴海線去・縱谷山線遊｜看海、逛市集、躺進稻浪裡</div>
+                        <div class="poster-title">${posterTitle}</div>
+                        <div class="poster-sub mt-1">${posterSub}</div>
                     </div>
-                    <div class="mt-4">
-                        <p class="text-xs font-bold text-teal-700 mb-1.5">▸ DAY 1 ・ 南迴海景與台東微醺夜</p>
-                        <div class="flex gap-3">${day1.map(card).join('')}</div>
-                    </div>
-                    <div class="mt-4">
-                        <p class="text-xs font-bold text-amber-600 mb-1.5">▸ DAY 2 ・ 縱谷田園與熱氣球故鄉</p>
-                        <div class="flex gap-3">${day2.map(card).join('')}</div>
-                    </div>
+                    ${dayGroups}
                     <div class="mt-auto pt-3 flex items-center justify-between text-[11px] text-slate-500">
                         <span>行前清單・預算估算・行事曆匯出・互動地圖 已備齊</span>
                         <span class="font-bold text-teal-700">慢活旅行・山海之間 ✦</span>
@@ -1777,9 +1826,7 @@ ${routeText}
         });
 
         // 初始化按鈕狀態與行程列表
-        setActiveTabButton('all');
-        setActiveRouteButton('all');
-        renderItineraryLists();
+        refreshAllViews();
         renderChecklist();
         computeBudget();
     </script>
