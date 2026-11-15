@@ -582,12 +582,12 @@
         let lastMarkerClickAt = 0;
 
         const itineraryStations = [
-            { id: 1, day: 'start', badge: '起點', name: '高雄阿蓮出發地', lat: 22.8825, lng: 120.3268, stay: '07:30 集合', drive: '前往多良約 2.5 小時', desc: '沿國道3號南下接南迴改。', img: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=500&q=80', navUrl: 'https://www.google.com/maps/search/?api=1&query=高雄市阿蓮區' },
-            { id: 2, day: 'day1', badge: 'D1-1', name: '多良觀光車站', lat: 22.5071, lng: 120.9614, stay: '預估停留 1.5 小時', drive: '距離上一站 2.5 小時', desc: '全台最美海景車站。', img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=500&q=80', navUrl: 'https://www.google.com/maps/search/?api=1&query=多良觀光車站' },
-            { id: 3, day: 'day1', badge: 'D1-2', name: '華源海灣', lat: 22.6468, lng: 121.0315, stay: '海景美拍順遊', drive: '距離多良 20 分鐘', desc: '椰林大道與湛藍海灣。', img: 'https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=500&q=80', navUrl: 'https://www.google.com/maps/search/?api=1&query=台東華源海灣' },
-            { id: 4, day: 'day1', badge: 'D1-3', name: '鐵花新聚落', lat: 22.7524, lng: 121.1462, stay: '17:30 晚間漫步', drive: '距離華源 30 分鐘', desc: '彩繪熱氣球燈海與市集。', img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=500&q=80', navUrl: 'https://www.google.com/maps/search/?api=1&query=鐵花新聚落' },
-            { id: 5, day: 'day2', badge: 'D2-1', name: '鹿野高台', lat: 22.9126, lng: 121.1213, stay: '09:15 停留 1.5 小時', drive: '距離市區 45 分鐘', desc: '熱氣球故鄉大草原。', img: 'https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?auto=format&fit=crop&w=500&q=80', navUrl: 'https://www.google.com/maps/search/?api=1&query=鹿野高台' },
-            { id: 6, day: 'day2', badge: 'D2-2', name: '池上伯朗大道', lat: 23.0975, lng: 121.2155, stay: '11:40 午餐與單車', drive: '距離鹿野 40 分鐘', desc: '無邊際稻浪與金城武樹。', img: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=500&q=80', navUrl: 'https://www.google.com/maps/search/?api=1&query=池上伯朗大道' }
+            { id: 1, day: 'start', badge: '起點', name: '高雄阿蓮出發地', lat: 22.8825, lng: 120.3268, stay: '07:30 集合', drive: '前往多良約 2.5 小時', desc: '沿國道3號南下接南迴改，太平洋海平線一路相伴。', img: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/8/87/%E5%8F%B0%E6%9D%B1%E7%B8%A3%E5%8F%B0%E6%9D%B1%E5%B8%82_%E5%8D%97%E8%BF%B4%E5%85%AC%E8%B7%AF_-_panoramio.jpg/960px-%E5%8F%B0%E6%9D%B1%E7%B8%A3%E5%8F%B0%E6%9D%B1%E5%B8%82_%E5%8D%97%E8%BF%B4%E5%85%AC%E8%B7%AF_-_panoramio.jpg', navUrl: 'https://www.google.com/maps/search/?api=1&query=高雄市阿蓮區', hours: '建議 07:00 前集合', bestTime: '早出發避開國道壅塞', food: '阿蓮老街早餐店、便利商店', parking: '集合點附停車場', tips: '出發前加滿油，南迴公路服務區較少；建議下載離線地圖備用。' },
+            { id: 2, day: 'day1', badge: 'D1-1', name: '多良觀光車站', lat: 22.5071, lng: 120.9614, stay: '預估停留 1.5 小時', drive: '距離上一站 2.5 小時', desc: '全台最美海景車站之一，月台上直接面向太平洋。', img: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/62/Overlooking_the_ocean_at_Duoliang_Train_Station.jpg/960px-Overlooking_the_ocean_at_Duoliang_Train_Station.jpg', navUrl: 'https://www.google.com/maps/search/?api=1&query=多良觀光車站', hours: '月台全天開放', bestTime: '清晨日出或傍晚藍調時刻', food: '鐵道便當、南迴公路沿線小吃', parking: '車站前免費停車場', tips: '站在月台往台東方向拍可同時入鏡海與山；請勿跨越安全線靠近軌道。' },
+            { id: 3, day: 'day1', badge: 'D1-2', name: '華源海灣', lat: 22.6468, lng: 121.0315, stay: '海景美拍順遊', drive: '距離多良 20 分鐘', desc: '椰林大道與湛藍海灣，東海岸最美沙灘之一。', img: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/63/Coastal_scenery_in_Taitung_19970202_01.jpg/960px-Coastal_scenery_in_Taitung_19970202_01.jpg', navUrl: 'https://www.google.com/maps/search/?api=1&query=台東華源海灣', hours: '全天開放', bestTime: '日落時分（17:00–18:00）', food: '椰林大道旁咖啡廳、海鮮餐廳', parking: '華源海灣停車場（假日建議早到）', tips: '可租 SUP 或海灘車；傍晚光線最柔和，適合拍剪影。' },
+            { id: 4, day: 'day1', badge: 'D1-3', name: '鐵花新聚落', lat: 22.7524, lng: 121.1462, stay: '17:30 晚間漫步', drive: '距離華源 30 分鐘', desc: '彩繪熱氣球燈海與文創市集，台東夜生活精華。', img: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/5/53/Taitung_Tourism_Night_Market02.jpg/960px-Taitung_Tourism_Night_Market02.jpg', navUrl: 'https://www.google.com/maps/search/?api=1&query=鐵花新聚落', hours: '市集約 17:00–21:00，燈海點燈後最美', bestTime: '夜晚點燈後（19:30 後）', food: '鐵花便當、炸物、手搖飲', parking: '聚落周邊停車場', tips: '熱氣球裝置藝術適合夜拍；假日人潮多，建議平日前往或工作日晚上。' },
+            { id: 5, day: 'day2', badge: 'D2-1', name: '鹿野高台', lat: 22.9126, lng: 121.1213, stay: '09:15 停留 1.5 小時', drive: '距離市區 45 分鐘', desc: '熱氣球故鄉大草原，360 度縱谷平原視野。', img: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/9/90/%E9%B9%BF%E9%87%8E%E9%AB%98%E5%8F%B0_Luye_Gaotai_-_panoramio.jpg/960px-%E9%B9%BF%E9%87%8E%E9%AB%98%E5%8F%B0_Luye_Gaotai_-_panoramio.jpg', navUrl: 'https://www.google.com/maps/search/?api=1&query=鹿野高台', hours: '全天開放', bestTime: '日出時分或熱氣球季（約 10–4 月）', food: '高台無餐飲，建議自備水與輕食', parking: '高台停車場（假日易滿）', tips: '清晨有雲海機率；可租電動輔助自行車環繞草原，注意高原日曬。' },
+            { id: 6, day: 'day2', badge: 'D2-2', name: '池上伯朗大道', lat: 23.0975, lng: 121.2155, stay: '11:40 午餐與單車', drive: '距離鹿野 40 分鐘', desc: '無邊際稻浪與金城武樹，縱谷最經典的單車道。', img: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/4/41/2023-09-13_Mr._Brown_Avenue.jpg/960px-2023-09-13_Mr._Brown_Avenue.jpg', navUrl: 'https://www.google.com/maps/search/?api=1&query=池上伯朗大道', hours: '全天開放', bestTime: '稻浪季 6–8 月，日出與夕陽最佳', food: '池上便當、米國學校周邊小吃', parking: '大道入口停車場', tips: '單車道全長約 7.5km，建議租單車慢慢騎；金城武樹位於大道中段，可順路打卡。' }
         ];
 
         let aiResultText = '';
@@ -815,7 +815,14 @@
                             </button>
                         </div>
                         <h3 class="text-lg font-bold text-slate-800 mb-1">${st.badge} ${st.name}</h3>
-                        <p class="text-sm text-slate-600 mb-1.5">${st.desc}</p>
+                        <p class="text-sm text-slate-600 mb-2">${st.desc}</p>
+                        <div class="space-y-1 text-xs text-slate-500 mb-2">
+                            <p class="flex items-start gap-1.5"><i class="fa-regular fa-clock text-brand-teal mt-0.5 shrink-0"></i><span><strong>時間：</strong>${st.hours || st.stay}</span></p>
+                            <p class="flex items-start gap-1.5"><i class="fa-solid fa-camera text-brand-gold mt-0.5 shrink-0"></i><span><strong>最佳拍攝：</strong>${st.bestTime || '自由安排'}</span></p>
+                            <p class="flex items-start gap-1.5"><i class="fa-solid fa-utensils text-orange-500 mt-0.5 shrink-0"></i><span><strong>美食：</strong>${st.food || '附近餐廳'}</span></p>
+                            <p class="flex items-start gap-1.5"><i class="fa-solid fa-square-parking text-slate-400 mt-0.5 shrink-0"></i><span><strong>停車：</strong>${st.parking || '路邊停車'}</span></p>
+                            ${st.tips ? `<p class="flex items-start gap-1.5"><i class="fa-solid fa-lightbulb text-amber-500 mt-0.5 shrink-0"></i><span><strong>小撇步：</strong>${st.tips}</span></p>` : ''}
+                        </div>
                         <p class="text-xs text-slate-400 flex items-center gap-1.5"><i class="fa-solid fa-car-side"></i>${st.drive}</p>
                     </li>
                 `).join('');
@@ -855,8 +862,15 @@
                     <span class="inline-block px-2 py-0.5 rounded-md bg-brand-tealLight text-brand-teal text-[11px] font-bold mb-1.5">${station.badge}</span>
                     <h4 class="font-bold text-sm text-slate-900 mb-1">${station.name}</h4>
                     <p class="text-[11px] text-teal-700 font-medium mb-0.5"><i class="fa-regular fa-clock mr-1"></i>${station.stay}</p>
-                    <p class="text-[11px] text-amber-700 font-medium mb-1.5"><i class="fa-solid fa-car mr-1"></i>${station.drive}</p>
-                    <p class="text-xs text-slate-600 leading-relaxed mb-2.5">${station.desc}</p>
+                    <p class="text-[11px] text-amber-700 font-medium mb-0.5"><i class="fa-solid fa-car mr-1"></i>${station.drive}</p>
+                    <p class="text-xs text-slate-600 leading-relaxed mb-2">${station.desc}</p>
+                    <div class="space-y-1 text-[11px] text-slate-500 mb-2.5">
+                        <p><i class="fa-regular fa-clock text-brand-teal mr-1"></i><strong>時間：</strong>${station.hours || '依行程安排'}</p>
+                        <p><i class="fa-solid fa-camera text-brand-gold mr-1"></i><strong>最佳拍攝：</strong>${station.bestTime || '自由安排'}</p>
+                        <p><i class="fa-solid fa-utensils text-orange-500 mr-1"></i><strong>美食：</strong>${station.food || '附近餐廳'}</p>
+                        <p><i class="fa-solid fa-square-parking text-slate-400 mr-1"></i><strong>停車：</strong>${station.parking || '路邊停車'}</p>
+                        ${station.tips ? `<p><i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i><strong>小撇步：</strong>${station.tips}</p>` : ''}
+                    </div>
                     <a href="${station.navUrl}" target="_blank" rel="noopener noreferrer" class="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-teal-700 active:bg-teal-800 text-white text-xs font-bold rounded-xl">開啟 Google 導航</a>
                 </div>
             `;
@@ -973,6 +987,11 @@
                 lines.push(`${s.badge} ${s.name}｜${s.stay}`);
                 lines.push(`  車程：${s.drive}`);
                 lines.push(`  介紹：${s.desc}`);
+                if (s.hours) lines.push(`  時間：${s.hours}`);
+                if (s.bestTime) lines.push(`  最佳拍攝：${s.bestTime}`);
+                if (s.food) lines.push(`  美食：${s.food}`);
+                if (s.parking) lines.push(`  停車：${s.parking}`);
+                if (s.tips) lines.push(`  小撇步：${s.tips}`);
                 lines.push('');
             });
             copyTextToClipboard(lines.join('\n'), '已複製行程至剪貼簿！');
