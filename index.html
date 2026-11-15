@@ -99,7 +99,86 @@
             height: 200px;
         }
 
+        @page poster-page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        /* 宣傳圖（A4 橫式・可愛插畫風） */
+        .poster-sheet {
+            aspect-ratio: 297 / 210;
+            width: 100%;
+            max-width: 1050px;
+            margin: 0 auto;
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #fce7f3 0%, #ecfeff 55%, #fef9c3 100%);
+            box-shadow: 0 20px 50px -12px rgba(0,0,0,0.25);
+            padding: 4.5% 5%;
+            page: poster-page;
+        }
+        .poster-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(1px);
+            opacity: .45;
+            pointer-events: none;
+        }
+        .poster-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 8px 8px 10px;
+            box-shadow: 0 6px 16px -6px rgba(0,0,0,0.18);
+            flex: 1;
+            min-width: 0;
+        }
+        .poster-card img {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            border-radius: 10px;
+            background: #e2e8f0;
+        }
+        .poster-title {
+            font-size: clamp(20px, 3.2vw, 34px);
+            font-weight: 800;
+            color: #134e4a;
+            letter-spacing: .5px;
+        }
+        .poster-sub {
+            font-size: clamp(11px, 1.4vw, 15px);
+            color: #0f766e;
+            font-weight: 600;
+        }
+
         /* 列印樣式：隱藏互動元素、展開全部內容 */
+        /* 宣傳圖列印模式：只印 A4 海報 */
+        @media print {
+            body.printing-poster > *:not(#poster-modal) {
+                display: none !important;
+            }
+            body.printing-poster #poster-modal {
+                position: static !important;
+                display: block !important;
+                background: none !important;
+                padding: 0 !important;
+                overflow: visible !important;
+            }
+            body.printing-poster .poster-sheet {
+                width: 297mm !important;
+                height: 210mm !important;
+                aspect-ratio: auto !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                max-width: none !important;
+                page: poster-page;
+            }
+            body.printing-poster #poster-controls {
+                display: none !important;
+            }
+        }
+
         @media print {
             html {
                 scroll-behavior: auto;
@@ -183,6 +262,10 @@
                 <button onclick="toggleAiGeneratorModal(true)" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 via-brand-gold to-orange-600 hover:from-amber-600 hover:to-orange-700 active:scale-95 text-white text-sm font-bold rounded-xl transition shadow-lg animate-pulse-glow cursor-pointer">
                     <i class="fa-solid fa-wand-magic-sparkles text-amber-200"></i>
                     <span>✨ AI 智慧行程規劃</span>
+                </button>
+                <button onclick="openPosterModal()" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-pink-500 to-rose-400 hover:from-pink-600 hover:to-rose-500 active:scale-95 text-white text-sm font-bold rounded-xl transition shadow-md cursor-pointer">
+                    <i class="fa-solid fa-image"></i>
+                    <span>產生宣傳圖</span>
                 </button>
                 <button onclick="copyItineraryText()" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-teal hover:bg-teal-800 active:scale-95 text-white text-sm font-medium rounded-xl transition shadow-sm cursor-pointer">
                     <i class="fa-regular fa-copy"></i>
@@ -351,6 +434,71 @@
             </ul>
         </section>
 
+        <!-- 分日頁籤切換控制器 -->
+        <nav class="no-print sticky top-2 z-20 bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-md border border-slate-200/80 mb-6">
+            <ul class="grid grid-cols-2 sm:grid-cols-6 gap-2 text-center text-xs sm:text-sm font-medium">
+                <li><button id="tab-all" onclick="switchDayTab('all')" class="w-full py-2.5 px-2 rounded-xl bg-brand-teal text-white shadow-sm transition cursor-pointer">全部展開</button></li>
+                <li><button id="tab-map" onclick="switchDayTab('map')" class="w-full py-2.5 px-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer flex items-center justify-center gap-1.5"><i class="fa-solid fa-map-location-dot text-brand-gold"></i><span>行程地圖</span></button></li>
+                <li><button id="tab-day1" onclick="switchDayTab('day1')" class="w-full py-2.5 px-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer">Day 1 行程</button></li>
+                <li><button id="tab-day2" onclick="switchDayTab('day2')" class="w-full py-2.5 px-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer">Day 2 行程</button></li>
+                <li><button id="tab-stay" onclick="switchDayTab('stay')" class="w-full py-2.5 px-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer flex items-center justify-center gap-1.5"><i class="fa-solid fa-bed text-brand-gold"></i><span>住宿推薦</span></button></li>
+                <li><button id="tab-prep" onclick="switchDayTab('prep')" class="w-full py-2.5 px-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer flex items-center justify-center gap-1.5"><i class="fa-solid fa-list-check text-brand-teal"></i><span>行前規劃</span></button></li>
+            </ul>
+        </nav>
+
+        <!-- 互動行程地圖分頁區塊 -->
+        <section id="section-map" class="hidden mb-10">
+            <div class="bg-white rounded-2xl shadow-sm p-4 sm:p-6 border border-slate-100">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
+                    <div>
+                        <span class="text-xs font-bold text-brand-teal uppercase tracking-wider block">INTERACTIVE ROUTE MAP</span>
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800">高雄阿蓮往返台東 · 全線互動地圖</h2>
+                    </div>
+                    <ul class="flex flex-wrap gap-2 text-xs font-medium">
+                        <li><button id="route-all" onclick="filterMapRoute('all')" class="px-3 py-2 rounded-xl bg-slate-800 text-white shadow-xs transition cursor-pointer whitespace-nowrap">全覽</button></li>
+                        <li><button id="route-day1" onclick="filterMapRoute('day1')" class="px-3 py-2 rounded-xl bg-teal-50 text-brand-teal border border-teal-200 transition cursor-pointer whitespace-nowrap">Day1 南迴</button></li>
+                        <li><button id="route-day2" onclick="filterMapRoute('day2')" class="px-3 py-2 rounded-xl bg-amber-50 text-brand-gold border border-amber-200 transition cursor-pointer whitespace-nowrap">Day2 縱谷</button></li>
+                    </ul>
+                </div>
+
+                <div class="w-full h-[55vh] min-h-[340px] sm:h-[480px] rounded-2xl overflow-hidden border border-slate-200 relative z-10 shadow-inner">
+                    <div id="taitung-map" class="w-full h-full"></div>
+                    <!-- 站點資訊卡（取代無法關閉的 Leaflet popup） -->
+                    <div id="station-detail-card" class="hidden absolute inset-x-3 bottom-3 z-[1200] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-[65%] sm:max-h-[60%] flex flex-col">
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <h3 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-map-pin text-brand-teal"></i>
+                        <span>全線站點快速導航列表（點擊可定位至地圖）</span>
+                    </h3>
+                    <ul id="map-station-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- DAY 1 行程區塊 -->
+        <section id="section-day1" class="print-expand mb-10">
+            <div class="bg-gradient-to-r from-brand-teal to-teal-600 text-white rounded-2xl p-5 mb-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                    <span class="text-xs uppercase tracking-wider text-amber-300 font-bold block mb-1">DAY 01 · 啟程向東</span>
+                    <h2 class="text-xl sm:text-2xl font-bold">第一天：南迴海景與台東市區微醺夜</h2>
+                </div>
+            </div>
+            <ul id="day1-list" class="space-y-4"></ul>
+        </section>
+
+        <!-- DAY 2 行程區塊 -->
+        <section id="section-day2" class="print-expand">
+            <div class="bg-gradient-to-r from-amber-600 to-brand-gold text-white rounded-2xl p-5 mb-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                    <span class="text-xs uppercase tracking-wider text-teal-100 font-bold block mb-1">DAY 02 · 縱谷漫遊</span>
+                    <h2 class="text-xl sm:text-2xl font-bold">第二天：縱谷田園風光與熱氣球故鄉</h2>
+                </div>
+            </div>
+            <ul id="day2-list" class="space-y-4"></ul>
+        </section>
         <!-- 住宿推薦區塊 -->
         <section id="section-stay" class="hidden print-expand bg-white rounded-2xl shadow-sm p-5 sm:p-7 mb-6 border border-slate-100">
             <div class="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-100">
@@ -497,76 +645,35 @@
             </div>
         </section>
 
-        <!-- 分日頁籤切換控制器 -->
-        <nav class="no-print sticky top-2 z-20 bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-md border border-slate-200/80 mb-6">
-            <ul class="grid grid-cols-2 sm:grid-cols-6 gap-2 text-center text-xs sm:text-sm font-medium">
-                <li><button id="tab-all" onclick="switchDayTab('all')" class="w-full py-2.5 px-2 rounded-xl bg-brand-teal text-white shadow-sm transition cursor-pointer">全部展開</button></li>
-                <li><button id="tab-map" onclick="switchDayTab('map')" class="w-full py-2.5 px-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer flex items-center justify-center gap-1.5"><i class="fa-solid fa-map-location-dot text-brand-gold"></i><span>行程地圖</span></button></li>
-                <li><button id="tab-day1" onclick="switchDayTab('day1')" class="w-full py-2.5 px-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer">Day 1 行程</button></li>
-                <li><button id="tab-day2" onclick="switchDayTab('day2')" class="w-full py-2.5 px-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer">Day 2 行程</button></li>
-                <li><button id="tab-stay" onclick="switchDayTab('stay')" class="w-full py-2.5 px-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer flex items-center justify-center gap-1.5"><i class="fa-solid fa-bed text-brand-gold"></i><span>住宿推薦</span></button></li>
-                <li><button id="tab-prep" onclick="switchDayTab('prep')" class="w-full py-2.5 px-2 rounded-xl text-slate-600 hover:bg-slate-100 transition cursor-pointer flex items-center justify-center gap-1.5"><i class="fa-solid fa-list-check text-brand-teal"></i><span>行前規劃</span></button></li>
-            </ul>
-        </nav>
-
-        <!-- 互動行程地圖分頁區塊 -->
-        <section id="section-map" class="hidden mb-10">
-            <div class="bg-white rounded-2xl shadow-sm p-4 sm:p-6 border border-slate-100">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
-                    <div>
-                        <span class="text-xs font-bold text-brand-teal uppercase tracking-wider block">INTERACTIVE ROUTE MAP</span>
-                        <h2 class="text-lg sm:text-xl font-bold text-slate-800">高雄阿蓮往返台東 · 全線互動地圖</h2>
-                    </div>
-                    <ul class="flex flex-wrap gap-2 text-xs font-medium">
-                        <li><button id="route-all" onclick="filterMapRoute('all')" class="px-3 py-2 rounded-xl bg-slate-800 text-white shadow-xs transition cursor-pointer whitespace-nowrap">全覽</button></li>
-                        <li><button id="route-day1" onclick="filterMapRoute('day1')" class="px-3 py-2 rounded-xl bg-teal-50 text-brand-teal border border-teal-200 transition cursor-pointer whitespace-nowrap">Day1 南迴</button></li>
-                        <li><button id="route-day2" onclick="filterMapRoute('day2')" class="px-3 py-2 rounded-xl bg-amber-50 text-brand-gold border border-amber-200 transition cursor-pointer whitespace-nowrap">Day2 縱谷</button></li>
-                    </ul>
-                </div>
-
-                <div class="w-full h-[55vh] min-h-[340px] sm:h-[480px] rounded-2xl overflow-hidden border border-slate-200 relative z-10 shadow-inner">
-                    <div id="taitung-map" class="w-full h-full"></div>
-                    <!-- 站點資訊卡（取代無法關閉的 Leaflet popup） -->
-                    <div id="station-detail-card" class="hidden absolute inset-x-3 bottom-3 z-[1200] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-[65%] sm:max-h-[60%] flex flex-col">
-                    </div>
-                </div>
-
-                <div class="mt-6">
-                    <h3 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-                        <i class="fa-solid fa-map-pin text-brand-teal"></i>
-                        <span>全線站點快速導航列表（點擊可定位至地圖）</span>
-                    </h3>
-                    <ul id="map-station-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></ul>
-                </div>
-            </div>
-        </section>
-
-        <!-- DAY 1 行程區塊 -->
-        <section id="section-day1" class="print-expand mb-10">
-            <div class="bg-gradient-to-r from-brand-teal to-teal-600 text-white rounded-2xl p-5 mb-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                    <span class="text-xs uppercase tracking-wider text-amber-300 font-bold block mb-1">DAY 01 · 啟程向東</span>
-                    <h2 class="text-xl sm:text-2xl font-bold">第一天：南迴海景與台東市區微醺夜</h2>
-                </div>
-            </div>
-            <ul id="day1-list" class="space-y-4"></ul>
-        </section>
-
-        <!-- DAY 2 行程區塊 -->
-        <section id="section-day2" class="print-expand">
-            <div class="bg-gradient-to-r from-amber-600 to-brand-gold text-white rounded-2xl p-5 mb-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                    <span class="text-xs uppercase tracking-wider text-teal-100 font-bold block mb-1">DAY 02 · 縱谷漫遊</span>
-                    <h2 class="text-xl sm:text-2xl font-bold">第二天：縱谷田園風光與熱氣球故鄉</h2>
-                </div>
-            </div>
-            <ul id="day2-list" class="space-y-4"></ul>
-        </section>
     </main>
 
     <footer class="safe-bottom bg-slate-900 text-slate-400 text-center py-8 px-4 text-xs sm:text-sm rounded-t-3xl">
         <p>高雄阿蓮出發 · 台東二天一夜山海慢活之旅專屬手冊</p>
     </footer>
+
+        <!-- A4 宣傳圖 Modal -->
+        <div id="poster-modal" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-6 overflow-y-auto">
+            <div class="w-full max-w-6xl">
+                <div id="poster-controls" class="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4">
+                    <div class="text-white">
+                        <h3 class="text-lg font-bold">A4 橫式旅遊宣傳圖</h3>
+                        <p class="text-xs text-slate-300">點「列印 / 存 PDF」可輸出 297×210mm 海報 · 想要 AI 客製文案？先複製行程貼到 Gemini 網頁版</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="copyItineraryText()" class="px-4 py-2 bg-white/15 hover:bg-white/25 text-white text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5">
+                            <i class="fa-regular fa-copy"></i>複製行程文字
+                        </button>
+                        <button onclick="printPoster()" class="px-4 py-2 bg-brand-gold hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5">
+                            <i class="fa-solid fa-print"></i>列印 / 存 PDF
+                        </button>
+                        <button onclick="closePosterModal()" class="px-4 py-2 bg-white/15 hover:bg-white/25 text-white text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5">
+                            <i class="fa-solid fa-xmark"></i>關閉
+                        </button>
+                    </div>
+                </div>
+                <div id="poster-sheet" class="poster-sheet"></div>
+            </div>
+        </div>
 
     <div id="toast-message" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 hidden items-center gap-2.5 bg-slate-900/95 text-white px-5 py-3 rounded-2xl shadow-xl border border-slate-700 text-sm font-medium mb-[env(safe-area-inset-bottom)]">
         <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
@@ -704,10 +811,12 @@
 
             const prompt = `請以繁體中文規劃一份詳細的${days}旅遊行程：從${origin}前往${destination}。預算風格：${budget}。一定要去的景點或需求：${mustVisit || '無特別指定'}。請輸出純文字行程表，包含每日時間安排、景點介紹、交通方式與美食建議，語氣親切自然。`;
 
-            try {
-                if (apiKey) {
+            const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+            let lastErr = null;
+            for (const model of (apiKey ? GEMINI_MODELS : [])) {
+                try {
                     const res = await fetch(
-                        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
+                        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
                         {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -719,12 +828,22 @@
                     );
                     if (!res.ok) {
                         const err = await res.json().catch(() => ({}));
-                        throw new Error(err?.error?.message || `API 回應錯誤 (${res.status})`);
+                        lastErr = new Error(err?.error?.message || `API 回應錯誤 (${res.status})`);
+                        continue;
                     }
                     const data = await res.json();
                     aiResultText = (data.candidates?.[0]?.content?.parts || [])
                         .map(p => p.text || '').join('').trim();
-                    if (!aiResultText) throw new Error('AI 未回傳內容，請重試');
+                    if (aiResultText) break;
+                    lastErr = new Error('AI 未回傳內容');
+                } catch (e) {
+                    lastErr = e;
+                }
+            }
+
+            try {
+                if (apiKey) {
+                    if (!aiResultText) throw lastErr || new Error('所有模型皆無法使用');
                 } else {
                     aiResultText = buildLocalItinerary(origin, destination, days, budget, mustVisit);
                 }
@@ -1134,6 +1253,66 @@
             showToast('行事曆檔案已下載！');
         }
 
+        // ===== A4 宣傳圖 =====
+        function buildPosterHTML() {
+            const card = st => `
+                <div class="poster-card" style="transform:rotate(${st.id % 2 ? '1.5deg' : '-1.5deg'})">
+                    <img src="${st.img}" alt="${st.name}" loading="lazy" onerror="this.style.display='none'">
+                    <div class="mt-1.5 text-center px-1">
+                        <p class="text-[13px] font-bold text-slate-800 truncate">${st.name}</p>
+                        <p class="text-[10px] text-teal-700 font-semibold truncate">${st.badge}・${st.stay}</p>
+                    </div>
+                </div>`;
+            const day1 = itineraryStations.filter(s => s.day === 'start' || s.day === 'day1');
+            const day2 = itineraryStations.filter(s => s.day === 'day2');
+            return `
+                <div class="poster-blob" style="width:220px;height:220px;background:#f9a8d4;top:-60px;right:-40px"></div>
+                <div class="poster-blob" style="width:160px;height:160px;background:#67e8f9;bottom:-50px;left:-30px"></div>
+                <div class="poster-blob" style="width:120px;height:120px;background:#fde68a;top:30%;left:45%"></div>
+                <div class="relative flex flex-col h-full">
+                    <div class="text-center">
+                        <div class="poster-title">🏝️ 高雄阿蓮出發：台東二天一夜山海慢活之旅</div>
+                        <div class="poster-sub mt-1">南迴海線去・縱谷山線遊｜看海、逛市集、躺進稻浪裡</div>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-xs font-bold text-teal-700 mb-1.5">▸ DAY 1 ・ 南迴海景與台東微醺夜</p>
+                        <div class="flex gap-3">${day1.map(card).join('')}</div>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-xs font-bold text-amber-600 mb-1.5">▸ DAY 2 ・ 縱谷田園與熱氣球故鄉</p>
+                        <div class="flex gap-3">${day2.map(card).join('')}</div>
+                    </div>
+                    <div class="mt-auto pt-3 flex items-center justify-between text-[11px] text-slate-500">
+                        <span>行前清單・預算估算・行事曆匯出・互動地圖 已備齊</span>
+                        <span class="font-bold text-teal-700">慢活旅行・山海之間 ✦</span>
+                    </div>
+                </div>`;
+        }
+
+        function openPosterModal() {
+            document.getElementById('poster-sheet').innerHTML = buildPosterHTML();
+            const modal = document.getElementById('poster-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.classList.add('modal-open');
+        }
+
+        function closePosterModal() {
+            const modal = document.getElementById('poster-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.classList.remove('modal-open');
+            document.body.classList.remove('printing-poster');
+        }
+
+        function printPoster() {
+            document.body.classList.add('printing-poster');
+            window.print();
+        }
+        window.addEventListener('afterprint', () => {
+            document.body.classList.remove('printing-poster');
+        });
+
         function showToast(message) {
             const toast = document.getElementById('toast-message');
             document.getElementById('toast-text').textContent = message;
@@ -1146,8 +1325,14 @@
         document.getElementById('ai-generator-modal').addEventListener('click', function (e) {
             if (e.target === this) toggleAiGeneratorModal(false);
         });
+        document.getElementById('poster-modal').addEventListener('click', function (e) {
+            if (e.target === this) closePosterModal();
+        });
         document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') toggleAiGeneratorModal(false);
+            if (e.key === 'Escape') {
+                toggleAiGeneratorModal(false);
+                closePosterModal();
+            }
         });
 
         // 初始化按鈕狀態與行程列表
